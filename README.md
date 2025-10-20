@@ -20,7 +20,7 @@ A Python IRC bot for #gentoo-weed on irc.libera.chat with cannabis-themed comman
 - `!time` - Countdown to December 4th, 2025
 - `!churchbong` - Show time since last toked
 - `!churchbong 420` - Same as above plus a random 420 fact
-- `!toke`, `!pass`, `!joint`, `!dab`, `!blunt` - Silent toke tracking
+- `!toke`, `!pass`, `!joint`, `!dab`, `!blunt`, `!bong`, `!vape` - Silent toke tracking
 - `!blaze` - Track toke with motivational message
 
 ## Setup

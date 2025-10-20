@@ -1,0 +1,16 @@
+[Unit]
+Description=Chr0n-Bot IRC Bot
+After=network.target
+
+[Service]
+Type=simple
+User=oem
+WorkingDirectory=/home/oem/chr0n-bot
+ExecStart=/usr/bin/python3 /home/oem/chr0n-bot/ircbot.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/oem/chr0n-bot/ircbot.log
+StandardError=append:/home/oem/chr0n-bot/ircbot.log
+
+[Install]
+WantedBy=multi-user.target
