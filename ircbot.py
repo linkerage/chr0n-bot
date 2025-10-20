@@ -166,7 +166,7 @@ class IRCBot:
         
         # Bot commands
         if command == "help":
-            self.send_message(channel, f"{nick}: Available commands: !help, !ping, !about, !uptime, !gentoo, !time, !churchbong, !toke, !pass, !joint, !dab, !blunt, !bong, !vape, !blaze")
+            self.send_message(channel, f"{nick}: Available commands: !help, !ping, !about, !uptime, !gentoo, !time, !churchbong, !toke, !pass, !joint, !dab, !blunt, !bong, !vape, !doombong, !olddoombong, !kylebong, !blaze")
             
         elif command == "ping":
             self.send_message(channel, f"{nick}: Pong!")
@@ -298,7 +298,7 @@ class IRCBot:
                 fact = random.choice(facts_420)
                 self.send_message(channel, f"420 Fact: {fact}")
                 
-        elif command in ["toke", "pass", "joint", "dab", "blunt", "bong", "vape"]:
+        elif command in ["toke", "pass", "joint", "dab", "blunt", "bong", "vape", "doombong", "olddoombong", "kylebong"]:
             # Silent toke tracking - just record timestamp without response
             current_time = time.time()
             self.toke_data[nick] = current_time
