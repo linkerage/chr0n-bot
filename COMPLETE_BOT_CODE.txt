@@ -1,3 +1,43 @@
+================================================================================
+                              CHR0N-BOT COMPLETE CODE
+================================================================================
+
+A Python IRC bot for #gentoo-weed on irc.libera.chat with cannabis-themed 
+commands and toke tracking.
+
+FEATURES:
+- Toke Tracking: Track time since last toke with !churchbong command
+- 420 Facts: Get random cannabis facts with !churchbong 420
+- Silent Tracking: Commands like !toke, !pass, !joint, !dab, !blunt silently track usage
+- Gentoo Love: Random Gentoo-themed responses with !gentoo
+- Standard Bot Commands: !help, !ping, !about, !uptime
+
+COMMANDS:
+- !help - Show available commands
+- !ping - Pong response
+- !about - Bot information  
+- !uptime - Show bot uptime
+- !gentoo - Random Gentoo-themed message
+- !churchbong - Show time since last toked
+- !churchbong 420 - Same as above plus a random 420 fact
+- !toke, !pass, !joint, !dab, !blunt - Silent toke tracking
+- !blaze - Track toke with motivational message
+
+SETUP:
+1. Save the code below as "ircbot.py"
+2. Install Python 3
+3. Run: python3 ircbot.py
+4. Bot will auto-create config.json with default settings
+
+FILES CREATED:
+- config.json - Configuration (auto-created)
+- toke_data.pkl - Persistent toke tracking data  
+- ircbot.log - Bot logs
+
+================================================================================
+                                 MAIN CODE
+================================================================================
+
 #!/usr/bin/env python3
 """
 IRC Bot for #gentoo-weed on irc.libera.chat
@@ -10,7 +50,6 @@ import json
 import os
 import logging
 import pickle
-from datetime import datetime
 
 class IRCBot:
     def __init__(self, config_file="config.json"):
@@ -166,7 +205,7 @@ class IRCBot:
         
         # Bot commands
         if command == "help":
-            self.send_message(channel, f"{nick}: Available commands: !help, !ping, !about, !uptime, !gentoo, !time, !churchbong, !toke, !pass, !joint, !dab, !blunt, !blaze")
+            self.send_message(channel, f"{nick}: Available commands: !help, !ping, !about, !uptime, !gentoo, !churchbong, !toke, !pass, !joint, !dab, !blunt, !blaze")
             
         elif command == "ping":
             self.send_message(channel, f"{nick}: Pong!")
@@ -192,59 +231,6 @@ class IRCBot:
             import random
             self.send_message(channel, f"{nick}: {random.choice(responses)}")
             
-        elif command == "time":
-            # Countdown to December 4th, 2025
-            target_date = datetime(2025, 12, 4, 0, 0, 0)
-            current_date = datetime.now()
-            
-            if current_date >= target_date:
-                self.send_message(channel, f"{nick}: December 4th, 2025 has already passed! 🎉")
-            else:
-                time_diff = target_date - current_date
-                
-                # Calculate total components
-                total_seconds = int(time_diff.total_seconds())
-                
-                # Calculate months (approximate using 30.44 days per month)
-                months = int(total_seconds // (30.44 * 24 * 3600))
-                remaining_seconds = total_seconds % int(30.44 * 24 * 3600)
-                
-                # Calculate weeks
-                weeks = remaining_seconds // (7 * 24 * 3600)
-                remaining_seconds = remaining_seconds % (7 * 24 * 3600)
-                
-                # Calculate days
-                days = remaining_seconds // (24 * 3600)
-                remaining_seconds = remaining_seconds % (24 * 3600)
-                
-                # Calculate hours
-                hours = remaining_seconds // 3600
-                remaining_seconds = remaining_seconds % 3600
-                
-                # Calculate minutes
-                minutes = remaining_seconds // 60
-                seconds = remaining_seconds % 60
-                
-                # Build time string
-                time_parts = []
-                if months > 0:
-                    time_parts.append(f"{months} month{'s' if months != 1 else ''}")
-                if weeks > 0:
-                    time_parts.append(f"{weeks} week{'s' if weeks != 1 else ''}")
-                if days > 0:
-                    time_parts.append(f"{days} day{'s' if days != 1 else ''}")
-                if hours > 0:
-                    time_parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
-                if minutes > 0:
-                    time_parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
-                if seconds > 0:
-                    time_parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
-                
-                if time_parts:
-                    time_str = ", ".join(time_parts)
-                    self.send_message(channel, f"{nick}: Time until December 4th, 2025: {time_str} ⏰")
-                else:
-                    self.send_message(channel, f"{nick}: December 4th, 2025 is here! 🎉")
             
         elif command == "churchbong":
             # Works with or without "420" argument
@@ -386,3 +372,15 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+================================================================================
+                                   END
+================================================================================
+
+To use this bot:
+1. Copy everything between the "MAIN CODE" section into a file called "ircbot.py"
+2. Run: python3 ircbot.py
+3. The bot will automatically create config.json with default settings
+4. Modify config.json to change channels, nickname, etc.
+
+Blaze on! 🔔💨
