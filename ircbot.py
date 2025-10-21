@@ -110,66 +110,48 @@ class IRCBot:
     def get_abstinence_rating(self, seconds_abstinent):
         """Calculate abstinence rating and breakdown from seconds"""
         # Calculate all time units
-        years = int(seconds_abstinent // (365.25 * 24 * 3600))
-        remaining = int(seconds_abstinent % (365.25 * 24 * 3600))
+        total_years = seconds_abstinent / (365.25 * 24 * 3600)
+        total_months = seconds_abstinent / (30.44 * 24 * 3600)
+        total_weeks = seconds_abstinent / (7 * 24 * 3600)
+        total_days = seconds_abstinent / (24 * 3600)
+        total_hours = seconds_abstinent / 3600
+        total_minutes = seconds_abstinent / 60
         
-        months = int(remaining // (30.44 * 24 * 3600))
-        remaining = int(remaining % (30.44 * 24 * 3600))
-        
-        weeks = remaining // (7 * 24 * 3600)
-        remaining = remaining % (7 * 24 * 3600)
-        
-        days = remaining // (24 * 3600)
-        remaining = remaining % (24 * 3600)
-        
-        hours = remaining // 3600
-        remaining = remaining % 3600
-        
-        minutes = remaining // 60
-        seconds = remaining % 60
-        
-        # Rating system with emojis (highest to lowest)
-        time_ratings = []
-        if years > 0:
-            decades = years // 10
-            remaining_years = years % 10
-            if decades > 0:
-                time_ratings.append(f"{decades} decade{'s' if decades != 1 else ''} 👑🏆 (LEGENDARY)")
-            if remaining_years > 0:
-                time_ratings.append(f"{remaining_years} year{'s' if remaining_years != 1 else ''} 🏆 (EPIC)")
-        if months > 0:
-            time_ratings.append(f"{months} month{'s' if months != 1 else ''} 🥇 (MASTER)")
-        if weeks > 0:
-            time_ratings.append(f"{weeks} week{'s' if weeks != 1 else ''} 🥈 (EXPERT)")
-        if days > 0:
-            time_ratings.append(f"{days} day{'s' if days != 1 else ''} 🥉 (SKILLED)")
-        if hours > 0:
-            time_ratings.append(f"{hours} hour{'s' if hours != 1 else ''} ⭐ (DECENT)")
-        if minutes > 0:
-            time_ratings.append(f"{minutes} minute{'s' if minutes != 1 else ''} 💫 (BASIC)")
-        if seconds > 0 or len(time_ratings) == 0:
-            time_ratings.append(f"{seconds} second{'s' if seconds != 1 else ''} 🔹 (ROOKIE)")
-        
-        # Get overall rating based on highest time unit
-        if years >= 10:
-            overall_rating = "👑 LEGENDARY ABSTINENCE DEITY"
-        elif years >= 1:
-            overall_rating = "🏆 EPIC ABSTINENCE MASTER"
-        elif months >= 1:
+        # Determine largest unit and show time in that unit only
+        if total_years >= 1:
+            if total_years >= 10:
+                decades = int(total_years // 10)
+                remaining_years = total_years - (decades * 10)
+                if decades >= 1 and remaining_years >= 1:
+                    time_display = f"{decades}.{int(remaining_years)} decades 👑🏆"
+                elif decades >= 1:
+                    time_display = f"{decades} decade{'s' if decades != 1 else ''} 👑🏆"
+                else:
+                    time_display = f"{total_years:.1f} years 🏆"
+                overall_rating = "👑 LEGENDARY ABSTINENCE DEITY"
+            else:
+                time_display = f"{total_years:.1f} years 🏆"
+                overall_rating = "🏆 EPIC ABSTINENCE MASTER"
+        elif total_months >= 1:
+            time_display = f"{total_months:.1f} months 🥇"
             overall_rating = "🥇 MASTER ABSTAINER"
-        elif weeks >= 1:
+        elif total_weeks >= 1:
+            time_display = f"{total_weeks:.1f} weeks 🥈"
             overall_rating = "🥈 EXPERT RESTRAINT"
-        elif days >= 1:
+        elif total_days >= 1:
+            time_display = f"{total_days:.1f} days 🥉"
             overall_rating = "🥉 SKILLED PATIENCE"
-        elif hours >= 1:
+        elif total_hours >= 1:
+            time_display = f"{total_hours:.1f} hours ⭐"
             overall_rating = "⭐ DECENT CONTROL"
-        elif minutes >= 1:
+        elif total_minutes >= 1:
+            time_display = f"{total_minutes:.1f} minutes 💫"
             overall_rating = "💫 BASIC WILLPOWER"
         else:
+            time_display = f"{int(seconds_abstinent)} seconds 🔹"
             overall_rating = "🔹 ROOKIE STATUS"
         
-        time_breakdown = " + ".join(time_ratings)
-        return time_breakdown, overall_rating
+        return time_display, overall_rating
         
     def get_timezone_from_location(self, location_parts):
         """Try to determine timezone from location parts"""
@@ -953,75 +935,17 @@ class IRCBot:
                     
                     quote = chronological_weed_quotes[quote_index]
                     
-                    # Calculate detailed time breakdown with ratings
+                    # Calculate detailed time breakdown with ratings using unified system
                     if nick in self.toke_data:
                         last_toke = self.toke_data[nick]
                         total_seconds_since = int(current_time - last_toke)
                         
-                        # Calculate all time units
-                        years = total_seconds_since // (365.25 * 24 * 3600)
-                        remaining = total_seconds_since % int(365.25 * 24 * 3600)
-                        
-                        months = remaining // int(30.44 * 24 * 3600)
-                        remaining = remaining % int(30.44 * 24 * 3600)
-                        
-                        weeks = remaining // (7 * 24 * 3600)
-                        remaining = remaining % (7 * 24 * 3600)
-                        
-                        days = remaining // (24 * 3600)
-                        remaining = remaining % (24 * 3600)
-                        
-                        hours = remaining // 3600
-                        remaining = remaining % 3600
-                        
-                        minutes = remaining // 60
-                        seconds = remaining % 60
-                        
-                        # Rating system with emojis (highest to lowest)
-                        time_ratings = []
-                        if years > 0:
-                            decades = years // 10
-                            remaining_years = years % 10
-                            if decades > 0:
-                                time_ratings.append(f"{decades} decade{'s' if decades != 1 else ''} 👑🏆 (LEGENDARY)")
-                            if remaining_years > 0:
-                                time_ratings.append(f"{remaining_years} year{'s' if remaining_years != 1 else ''} 🏆 (EPIC)")
-                        if months > 0:
-                            time_ratings.append(f"{months} month{'s' if months != 1 else ''} 🥇 (MASTER)")
-                        if weeks > 0:
-                            time_ratings.append(f"{weeks} week{'s' if weeks != 1 else ''} 🥈 (EXPERT)")
-                        if days > 0:
-                            time_ratings.append(f"{days} day{'s' if days != 1 else ''} 🥉 (SKILLED)")
-                        if hours > 0:
-                            time_ratings.append(f"{hours} hour{'s' if hours != 1 else ''} ⭐ (DECENT)")
-                        if minutes > 0:
-                            time_ratings.append(f"{minutes} minute{'s' if minutes != 1 else ''} 💫 (BASIC)")
-                        if seconds > 0 or len(time_ratings) == 0:
-                            time_ratings.append(f"{seconds} second{'s' if seconds != 1 else ''} 🔹 (ROOKIE)")
-                        
-                        # Get overall rating based on highest time unit
-                        if years >= 10:
-                            overall_rating = "👑 LEGENDARY ABSTINENCE DEITY"
-                        elif years >= 1:
-                            overall_rating = "🏆 EPIC ABSTINENCE MASTER"
-                        elif months >= 1:
-                            overall_rating = "🥇 MASTER ABSTAINER"
-                        elif weeks >= 1:
-                            overall_rating = "🥈 EXPERT RESTRAINT"
-                        elif days >= 1:
-                            overall_rating = "🥉 SKILLED PATIENCE"
-                        elif hours >= 1:
-                            overall_rating = "⭐ DECENT CONTROL"
-                        elif minutes >= 1:
-                            overall_rating = "💫 BASIC WILLPOWER"
-                        else:
-                            overall_rating = "🔹 ROOKIE STATUS"
-                        
-                        time_breakdown = " + ".join(time_ratings)
+                        # Use the unified rating system
+                        time_breakdown, overall_rating = self.get_abstinence_rating(total_seconds_since)
                         
                         # Send the wisdom quote
                         self.send_message(channel, f"🕐 4:20 ANCIENT WISDOM: {quote}")
-                        # Send the detailed rating breakdown
+                        # Send the unified rating breakdown
                         self.send_message(channel, f"📊 ABSTINENCE ANALYSIS: {time_breakdown}")
                         self.send_message(channel, f"🎖️ OVERALL RATING: {overall_rating}")
                     else:
