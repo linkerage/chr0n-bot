@@ -494,6 +494,48 @@ class IRCBot:
         
         return enhanced_rank
         
+    def get_stoner_rank(self, seconds_abstinent):
+        """Get humorous stoner ranking based on abstinence time"""
+        days = seconds_abstinent // 86400
+        hours = (seconds_abstinent % 86400) // 3600
+        minutes = (seconds_abstinent % 3600) // 60
+        
+        # Humorous stoner abstinence rankings (longest = highest rank)
+        if days >= 365:  # 1+ years
+            return "👑 LEGENDARY SOBER SAGE"
+        elif days >= 180:  # 6+ months
+            return "🧿 ENLIGHTENED MONK OF SOBRIETY"
+        elif days >= 90:   # 3+ months
+            return "🧘 ZEN MASTER OF RESTRAINT"
+        elif days >= 30:   # 1+ months
+            return "🌱 CANNABIS CLEANSE CHAMPION"
+        elif days >= 14:   # 2+ weeks
+            return "🏆 T-BREAK TITAN"
+        elif days >= 7:    # 1+ weeks
+            return "🥇 WILLPOWER WARRIOR"
+        elif days >= 3:    # 3+ days
+            return "🥈 ABSTINENCE APPRENTICE"
+        elif days >= 1:    # 1+ days
+            return "🥉 SOBER SOLDIER"
+        elif hours >= 12:  # 12+ hours
+            return "⭐ HALF-DAY HERO"
+        elif hours >= 6:   # 6+ hours
+            return "🌅 SUNRISE SURVIVOR"
+        elif hours >= 3:   # 3+ hours
+            return "🕰️ THREE-HOUR TROUPER"
+        elif hours >= 1:   # 1+ hours
+            return "⏰ HOURLY HOLDOUT"
+        elif minutes >= 30: # 30+ minutes
+            return "💫 HALF-HOUR HUSTLER"
+        elif minutes >= 15: # 15+ minutes
+            return "🔕 QUARTER-HOUR QUITTER"
+        elif minutes >= 5:  # 5+ minutes
+            return "🚀 FIVE-MINUTE FIGHTER"
+        elif minutes >= 1:  # 1+ minutes
+            return "🔹 MINUTE-MAN ROOKIE"
+        else:               # Under 1 minute
+            return "🍃 FRESH TOKER"
+        
     def connect(self):
         """Connect to the IRC server"""
         try:
@@ -669,15 +711,8 @@ class IRCBot:
                 else:
                     rank_emoji = f"{i}."
                 
-                # Get highest time unit for simplified rating
-                if days > 0:
-                    simple_rating = "🥉 SKILLED+"
-                elif hours > 0:
-                    simple_rating = "⭐ DECENT+"
-                elif minutes >= 30:
-                    simple_rating = "💫 BASIC+"
-                else:
-                    simple_rating = "🔹 ROOKIE"
+                # Get humorous stoner ranking based on abstinence time
+                simple_rating = self.get_stoner_rank(seconds_abstinent)
                 
                 self.send_message(channel, f"{rank_emoji} {user}: {time_str} ({simple_rating})")
             
@@ -784,7 +819,8 @@ class IRCBot:
                             user_position += 1
                 
                 total_users = len(self.toke_data)
-                rank_info = f"(Rank #{user_position}/{total_users})"
+                stoner_rank = self.get_stoner_rank(time_diff_seconds)
+                rank_info = f"(#{user_position}/{total_users}: {stoner_rank})"
                 
                 self.send_message(channel, f"{nick}: Time since last toked: {time_str} {rank_info} 🔔💨")
                 
