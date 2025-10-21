@@ -344,8 +344,82 @@ class IRCBot:
                         quote_index = random.choice([9, 10, 11])  # Armstrong, Ali, Reagan
                     
                     quote = chronological_weed_quotes[quote_index]
-                    abstinence_msg = f" [Abstinent: {days_abstinent}d]" if days_abstinent >= 1 else ""
-                    self.send_message(channel, f"🕐 4:20 ANCIENT WISDOM: {quote}{abstinence_msg}")
+                    
+                    # Calculate detailed time breakdown with ratings
+                    if nick in self.toke_data:
+                        last_toke = self.toke_data[nick]
+                        total_seconds_since = int(current_time - last_toke)
+                        
+                        # Calculate all time units
+                        years = total_seconds_since // (365.25 * 24 * 3600)
+                        remaining = total_seconds_since % int(365.25 * 24 * 3600)
+                        
+                        months = remaining // int(30.44 * 24 * 3600)
+                        remaining = remaining % int(30.44 * 24 * 3600)
+                        
+                        weeks = remaining // (7 * 24 * 3600)
+                        remaining = remaining % (7 * 24 * 3600)
+                        
+                        days = remaining // (24 * 3600)
+                        remaining = remaining % (24 * 3600)
+                        
+                        hours = remaining // 3600
+                        remaining = remaining % 3600
+                        
+                        minutes = remaining // 60
+                        seconds = remaining % 60
+                        
+                        # Rating system with emojis (highest to lowest)
+                        time_ratings = []
+                        if years > 0:
+                            decades = years // 10
+                            remaining_years = years % 10
+                            if decades > 0:
+                                time_ratings.append(f"{decades} decade{'s' if decades != 1 else ''} 👑🏆 (LEGENDARY)")
+                            if remaining_years > 0:
+                                time_ratings.append(f"{remaining_years} year{'s' if remaining_years != 1 else ''} 🏆 (EPIC)")
+                        if months > 0:
+                            time_ratings.append(f"{months} month{'s' if months != 1 else ''} 🥇 (MASTER)")
+                        if weeks > 0:
+                            time_ratings.append(f"{weeks} week{'s' if weeks != 1 else ''} 🥈 (EXPERT)")
+                        if days > 0:
+                            time_ratings.append(f"{days} day{'s' if days != 1 else ''} 🥉 (SKILLED)")
+                        if hours > 0:
+                            time_ratings.append(f"{hours} hour{'s' if hours != 1 else ''} ⭐ (DECENT)")
+                        if minutes > 0:
+                            time_ratings.append(f"{minutes} minute{'s' if minutes != 1 else ''} 💫 (BASIC)")
+                        if seconds > 0 or len(time_ratings) == 0:
+                            time_ratings.append(f"{seconds} second{'s' if seconds != 1 else ''} 🔹 (ROOKIE)")
+                        
+                        # Get overall rating based on highest time unit
+                        if years >= 10:
+                            overall_rating = "👑 LEGENDARY ABSTINENCE DEITY"
+                        elif years >= 1:
+                            overall_rating = "🏆 EPIC ABSTINENCE MASTER"
+                        elif months >= 1:
+                            overall_rating = "🥇 MASTER ABSTAINER"
+                        elif weeks >= 1:
+                            overall_rating = "🥈 EXPERT RESTRAINT"
+                        elif days >= 1:
+                            overall_rating = "🥉 SKILLED PATIENCE"
+                        elif hours >= 1:
+                            overall_rating = "⭐ DECENT CONTROL"
+                        elif minutes >= 1:
+                            overall_rating = "💫 BASIC WILLPOWER"
+                        else:
+                            overall_rating = "🔹 ROOKIE STATUS"
+                        
+                        time_breakdown = " + ".join(time_ratings)
+                        
+                        # Send the wisdom quote
+                        self.send_message(channel, f"🕐 4:20 ANCIENT WISDOM: {quote}")
+                        # Send the detailed rating breakdown
+                        self.send_message(channel, f"📊 ABSTINENCE ANALYSIS: {time_breakdown}")
+                        self.send_message(channel, f"🎖️ OVERALL RATING: {overall_rating}")
+                    else:
+                        # First time user
+                        self.send_message(channel, f"🕐 4:20 ANCIENT WISDOM: {quote}")
+                        self.send_message(channel, f"📊 ABSTINENCE ANALYSIS: First churchbong! 🔹 (ROOKIE STATUS)")
                 else:
                     # Regular 420 facts for non-4:20 times
                     facts_420 = [
