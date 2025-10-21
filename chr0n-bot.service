@@ -1,5 +1,5 @@
 [Unit]
-Description=Chr0n-Bot IRC Bot
+Description=Chronibit IRC Bot
 After=network.target
 
 [Service]

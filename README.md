@@ -1,4 +1,4 @@
-# Chr0n-Bot
+# Chronibit
 
 A Python IRC bot for #gentoo-weed on irc.libera.chat with cannabis-themed commands and toke tracking.
 

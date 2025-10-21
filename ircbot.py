@@ -30,9 +30,9 @@ class IRCBot:
             config = {
                 "server": "irc.libera.chat",
                 "port": 6667,
-                "nickname": "Chr0n-bot",
-                "username": "Chr0n-bot",
-                "realname": "Chr0n-bot",
+                "nickname": "Chronibit",
+                "username": "Chronibit",
+                "realname": "Chronibit",
                 "channels": ["#gentoo-weed"],
                 "command_prefix": "!"
             }
