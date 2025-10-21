@@ -571,7 +571,7 @@ class IRCBot:
         
         # Bot commands
         if command == "help":
-            self.send_message(channel, f"{nick}: Available commands: !help, !ping, !about, !uptime, !gentoo, !time, !bud-zone, !churchbong, !toke, !pass, !joint, !dab, !blunt, !bong, !vape, !doombong, !olddoombong, !kylebong, !blaze")
+            self.send_message(channel, f"{nick}: Available commands: !help, !ping, !about, !uptime, !gentoo, !time, !bud-zone, !rankings, !churchbong, !toke, !pass, !joint, !dab, !blunt, !bong, !vape, !doombong, !olddoombong, !kylebong, !blaze")
             
         elif command == "ping":
             self.send_message(channel, f"{nick}: Pong!")
@@ -619,6 +619,72 @@ class IRCBot:
                     self.send_message(channel, f"Your 4:20 times will now be based on {location_str} timezone! 🕐🌿")
                 else:
                     self.send_message(channel, f"{nick}: Sorry, couldn't find timezone for '{location_str}'. Try: city, state, country (e.g., 'Los Angeles CA', 'London UK', 'Tokyo Japan') 🌍🌿")
+            
+        elif command == "rankings":
+            # Show abstinence leaderboard - longest time since last toke at top
+            current_time = time.time()
+            
+            # Calculate current abstinence times for all users
+            user_abstinence = []
+            for user, last_toke in self.toke_data.items():
+                time_abstinent = int(current_time - last_toke)
+                user_abstinence.append((user, time_abstinent))
+            
+            if not user_abstinence:
+                self.send_message(channel, "🏆 No one has toked yet! Be the first to use !churchbong 🌿")
+                return
+            
+            # Sort by abstinence time (longest first)
+            user_abstinence.sort(key=lambda x: x[1], reverse=True)
+            
+            # Show top rankings
+            self.send_message(channel, "🏆 ABSTINENCE LEADERBOARD - Longest Time Since Last Toke 🌿")
+            
+            for i, (user, seconds_abstinent) in enumerate(user_abstinence[:10], 1):
+                # Get abstinence rating
+                time_breakdown, overall_rating = self.get_abstinence_rating(seconds_abstinent)
+                
+                # Format time display
+                days = int(seconds_abstinent // 86400)
+                hours = int((seconds_abstinent % 86400) // 3600) 
+                minutes = int((seconds_abstinent % 3600) // 60)
+                seconds = int(seconds_abstinent % 60)
+                
+                if days > 0:
+                    time_str = f"{days}d {hours}h {minutes}m"
+                elif hours > 0:
+                    time_str = f"{hours}h {minutes}m"
+                elif minutes > 0:
+                    time_str = f"{minutes}m {seconds}s"
+                else:
+                    time_str = f"{seconds}s"
+                
+                # Rank emojis
+                if i == 1:
+                    rank_emoji = "🥇"  # Gold medal
+                elif i == 2:
+                    rank_emoji = "🥈"  # Silver medal
+                elif i == 3:
+                    rank_emoji = "🥉"  # Bronze medal
+                else:
+                    rank_emoji = f"{i}."
+                
+                # Get highest time unit for simplified rating
+                if days > 0:
+                    simple_rating = "🥉 SKILLED+"
+                elif hours > 0:
+                    simple_rating = "⭐ DECENT+"
+                elif minutes >= 30:
+                    simple_rating = "💫 BASIC+"
+                else:
+                    simple_rating = "🔹 ROOKIE"
+                
+                self.send_message(channel, f"{rank_emoji} {user}: {time_str} ({simple_rating})")
+            
+            # Show total tracked users
+            total_users = len(user_abstinence)
+            if total_users > 10:
+                self.send_message(channel, f"... and {total_users - 10} more tokers! Use !churchbong to join the rankings! 🌿")
             
         elif command == "time":
             # Countdown to December 4th, 2025
@@ -708,7 +774,19 @@ class IRCBot:
                 else:
                     time_str = f"{seconds}s"
                 
-                self.send_message(channel, f"{nick}: Time since last toked: {time_str} 🔔💨")
+                # Calculate current ranking position
+                current_time_temp = time.time()
+                user_position = 1
+                for other_user, other_last_toke in self.toke_data.items():
+                    if other_user != nick:
+                        other_abstinence = int(current_time_temp - other_last_toke)
+                        if other_abstinence > time_diff_seconds:
+                            user_position += 1
+                
+                total_users = len(self.toke_data)
+                rank_info = f"(Rank #{user_position}/{total_users})"
+                
+                self.send_message(channel, f"{nick}: Time since last toked: {time_str} {rank_info} 🔔💨")
                 
                 # Only show detailed rating system at 4:20 AM/PM
                 if is_420_time:
