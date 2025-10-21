@@ -110,48 +110,99 @@ class IRCBot:
     def get_abstinence_rating(self, seconds_abstinent):
         """Calculate abstinence rating and breakdown from seconds"""
         # Calculate all time units
-        total_years = seconds_abstinent / (365.25 * 24 * 3600)
-        total_months = seconds_abstinent / (30.44 * 24 * 3600)
-        total_weeks = seconds_abstinent / (7 * 24 * 3600)
-        total_days = seconds_abstinent / (24 * 3600)
-        total_hours = seconds_abstinent / 3600
-        total_minutes = seconds_abstinent / 60
+        years = int(seconds_abstinent // (365.25 * 24 * 3600))
+        remaining = int(seconds_abstinent % (365.25 * 24 * 3600))
         
-        # Determine largest unit and show time in that unit only
-        if total_years >= 1:
-            if total_years >= 10:
-                decades = int(total_years // 10)
-                remaining_years = total_years - (decades * 10)
-                if decades >= 1 and remaining_years >= 1:
-                    time_display = f"{decades}.{int(remaining_years)} decades 👑🏆"
-                elif decades >= 1:
-                    time_display = f"{decades} decade{'s' if decades != 1 else ''} 👑🏆"
+        months = int(remaining // (30.44 * 24 * 3600))
+        remaining = int(remaining % (30.44 * 24 * 3600))
+        
+        weeks = remaining // (7 * 24 * 3600)
+        remaining = remaining % (7 * 24 * 3600)
+        
+        days = remaining // (24 * 3600)
+        remaining = remaining % (24 * 3600)
+        
+        hours = remaining // 3600
+        remaining = remaining % 3600
+        
+        minutes = remaining // 60
+        seconds = remaining % 60
+        
+        # Build time breakdown with all units, but only add emoji to highest unit
+        time_parts = []
+        highest_unit_found = False
+        
+        if years > 0:
+            decades = years // 10
+            remaining_years = years % 10
+            if decades > 0:
+                if not highest_unit_found:
+                    time_parts.append(f"{decades} decade{'s' if decades != 1 else ''} 👑🏆")
+                    highest_unit_found = True
                 else:
-                    time_display = f"{total_years:.1f} years 🏆"
-                overall_rating = "👑 LEGENDARY ABSTINENCE DEITY"
+                    time_parts.append(f"{decades} decade{'s' if decades != 1 else ''}")
+            if remaining_years > 0:
+                if not highest_unit_found:
+                    time_parts.append(f"{remaining_years} year{'s' if remaining_years != 1 else ''} 🏆")
+                    highest_unit_found = True
+                else:
+                    time_parts.append(f"{remaining_years} year{'s' if remaining_years != 1 else ''}")
+        if months > 0:
+            if not highest_unit_found:
+                time_parts.append(f"{months} month{'s' if months != 1 else ''} 🥇")
+                highest_unit_found = True
             else:
-                time_display = f"{total_years:.1f} years 🏆"
-                overall_rating = "🏆 EPIC ABSTINENCE MASTER"
-        elif total_months >= 1:
-            time_display = f"{total_months:.1f} months 🥇"
+                time_parts.append(f"{months} month{'s' if months != 1 else ''}")
+        if weeks > 0:
+            if not highest_unit_found:
+                time_parts.append(f"{weeks} week{'s' if weeks != 1 else ''} 🥈")
+                highest_unit_found = True
+            else:
+                time_parts.append(f"{weeks} week{'s' if weeks != 1 else ''}")
+        if days > 0:
+            if not highest_unit_found:
+                time_parts.append(f"{days} day{'s' if days != 1 else ''} 🥉")
+                highest_unit_found = True
+            else:
+                time_parts.append(f"{days} day{'s' if days != 1 else ''}")
+        if hours > 0:
+            if not highest_unit_found:
+                time_parts.append(f"{hours} hour{'s' if hours != 1 else ''} ⭐")
+                highest_unit_found = True
+            else:
+                time_parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
+        if minutes > 0:
+            if not highest_unit_found:
+                time_parts.append(f"{minutes} minute{'s' if minutes != 1 else ''} 💫")
+                highest_unit_found = True
+            else:
+                time_parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
+        if seconds > 0 or len(time_parts) == 0:
+            if not highest_unit_found:
+                time_parts.append(f"{seconds} second{'s' if seconds != 1 else ''} 🔹")
+            else:
+                time_parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
+        
+        # Get overall rating based on highest time unit
+        if years >= 10:
+            overall_rating = "👑 LEGENDARY ABSTINENCE DEITY"
+        elif years >= 1:
+            overall_rating = "🏆 EPIC ABSTINENCE MASTER"
+        elif months >= 1:
             overall_rating = "🥇 MASTER ABSTAINER"
-        elif total_weeks >= 1:
-            time_display = f"{total_weeks:.1f} weeks 🥈"
+        elif weeks >= 1:
             overall_rating = "🥈 EXPERT RESTRAINT"
-        elif total_days >= 1:
-            time_display = f"{total_days:.1f} days 🥉"
+        elif days >= 1:
             overall_rating = "🥉 SKILLED PATIENCE"
-        elif total_hours >= 1:
-            time_display = f"{total_hours:.1f} hours ⭐"
+        elif hours >= 1:
             overall_rating = "⭐ DECENT CONTROL"
-        elif total_minutes >= 1:
-            time_display = f"{total_minutes:.1f} minutes 💫"
+        elif minutes >= 1:
             overall_rating = "💫 BASIC WILLPOWER"
         else:
-            time_display = f"{int(seconds_abstinent)} seconds 🔹"
             overall_rating = "🔹 ROOKIE STATUS"
         
-        return time_display, overall_rating
+        time_breakdown = " + ".join(time_parts)
+        return time_breakdown, overall_rating
         
     def get_timezone_from_location(self, location_parts):
         """Try to determine timezone from location parts"""
