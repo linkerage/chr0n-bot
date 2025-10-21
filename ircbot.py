@@ -69,13 +69,19 @@ class IRCBot:
                 if isinstance(data, dict) and 'timestamps' in data:
                     self.toke_data = data['timestamps']
                     self.tb_enabled = data.get('tb_enabled', {})
+                    self.toke_counts = data.get('toke_counts', {})
+                    self.longest_abstinence = data.get('longest_abstinence', {})
                 else:
                     # Old format, migrate
                     self.toke_data = data
                     self.tb_enabled = {}
+                    self.toke_counts = {}
+                    self.longest_abstinence = {}
         except (FileNotFoundError, EOFError):
             self.toke_data = {}  # {user: last_toke_timestamp}
             self.tb_enabled = {}  # {user: True/False}
+            self.toke_counts = {}  # {user: total_tokes}
+            self.longest_abstinence = {}  # {user: longest_seconds}
             
     def save_toke_data(self):
         """Save toke break data to file"""
@@ -83,11 +89,77 @@ class IRCBot:
             with open(self.toke_file, 'wb') as f:
                 data = {
                     'timestamps': self.toke_data,
-                    'tb_enabled': self.tb_enabled
+                    'tb_enabled': self.tb_enabled,
+                    'toke_counts': self.toke_counts,
+                    'longest_abstinence': self.longest_abstinence
                 }
                 pickle.dump(data, f)
         except Exception as e:
             self.logger.error(f"Failed to save toke data: {e}")
+            
+    def get_abstinence_rating(self, seconds_abstinent):
+        """Calculate abstinence rating and breakdown from seconds"""
+        # Calculate all time units
+        years = int(seconds_abstinent // (365.25 * 24 * 3600))
+        remaining = int(seconds_abstinent % (365.25 * 24 * 3600))
+        
+        months = int(remaining // (30.44 * 24 * 3600))
+        remaining = int(remaining % (30.44 * 24 * 3600))
+        
+        weeks = remaining // (7 * 24 * 3600)
+        remaining = remaining % (7 * 24 * 3600)
+        
+        days = remaining // (24 * 3600)
+        remaining = remaining % (24 * 3600)
+        
+        hours = remaining // 3600
+        remaining = remaining % 3600
+        
+        minutes = remaining // 60
+        seconds = remaining % 60
+        
+        # Rating system with emojis (highest to lowest)
+        time_ratings = []
+        if years > 0:
+            decades = years // 10
+            remaining_years = years % 10
+            if decades > 0:
+                time_ratings.append(f"{decades} decade{'s' if decades != 1 else ''} 👑🏆 (LEGENDARY)")
+            if remaining_years > 0:
+                time_ratings.append(f"{remaining_years} year{'s' if remaining_years != 1 else ''} 🏆 (EPIC)")
+        if months > 0:
+            time_ratings.append(f"{months} month{'s' if months != 1 else ''} 🥇 (MASTER)")
+        if weeks > 0:
+            time_ratings.append(f"{weeks} week{'s' if weeks != 1 else ''} 🥈 (EXPERT)")
+        if days > 0:
+            time_ratings.append(f"{days} day{'s' if days != 1 else ''} 🥉 (SKILLED)")
+        if hours > 0:
+            time_ratings.append(f"{hours} hour{'s' if hours != 1 else ''} ⭐ (DECENT)")
+        if minutes > 0:
+            time_ratings.append(f"{minutes} minute{'s' if minutes != 1 else ''} 💫 (BASIC)")
+        if seconds > 0 or len(time_ratings) == 0:
+            time_ratings.append(f"{seconds} second{'s' if seconds != 1 else ''} 🔹 (ROOKIE)")
+        
+        # Get overall rating based on highest time unit
+        if years >= 10:
+            overall_rating = "👑 LEGENDARY ABSTINENCE DEITY"
+        elif years >= 1:
+            overall_rating = "🏆 EPIC ABSTINENCE MASTER"
+        elif months >= 1:
+            overall_rating = "🥇 MASTER ABSTAINER"
+        elif weeks >= 1:
+            overall_rating = "🥈 EXPERT RESTRAINT"
+        elif days >= 1:
+            overall_rating = "🥉 SKILLED PATIENCE"
+        elif hours >= 1:
+            overall_rating = "⭐ DECENT CONTROL"
+        elif minutes >= 1:
+            overall_rating = "💫 BASIC WILLPOWER"
+        else:
+            overall_rating = "🔹 ROOKIE STATUS"
+        
+        time_breakdown = " + ".join(time_ratings)
+        return time_breakdown, overall_rating
         
     def connect(self):
         """Connect to the IRC server"""
@@ -249,16 +321,27 @@ class IRCBot:
         elif command == "churchbong":
             # Works with or without "420" argument
             current_time = time.time()
+            current_datetime = datetime.now()
+            current_hour = current_datetime.hour
+            current_minute = current_datetime.minute
+            
+            # Check if it's 4:20 AM (04:20) or 4:20 PM (16:20) for detailed analysis
+            is_420_time = (current_hour == 4 or current_hour == 16) and current_minute == 20
             
             if nick in self.toke_data:
                 # Calculate time since last toke
                 last_toke = self.toke_data[nick]
-                time_diff = current_time - last_toke
+                time_diff_seconds = int(current_time - last_toke)
                 
-                days = int(time_diff // 86400)
-                hours = int((time_diff % 86400) // 3600) 
-                minutes = int((time_diff % 3600) // 60)
-                seconds = int(time_diff % 60)
+                # Update longest abstinence record
+                if nick not in self.longest_abstinence or time_diff_seconds > self.longest_abstinence[nick]:
+                    self.longest_abstinence[nick] = time_diff_seconds
+                
+                # Simple time display
+                days = int(time_diff_seconds // 86400)
+                hours = int((time_diff_seconds % 86400) // 3600) 
+                minutes = int((time_diff_seconds % 3600) // 60)
+                seconds = int(time_diff_seconds % 60)
                 
                 if days > 0:
                     time_str = f"{days}d {hours}h {minutes}m {seconds}s"
@@ -268,10 +351,45 @@ class IRCBot:
                     time_str = f"{minutes}m {seconds}s"
                 else:
                     time_str = f"{seconds}s"
-                    
+                
                 self.send_message(channel, f"{nick}: Time since last toked: {time_str} 🔔💨")
+                
+                # Only show detailed rating system at 4:20 AM/PM
+                if is_420_time:
+                    # Get rating breakdown
+                    time_breakdown, overall_rating = self.get_abstinence_rating(time_diff_seconds)
+                    # Get longest record breakdown
+                    longest_breakdown, longest_rating = self.get_abstinence_rating(self.longest_abstinence[nick])
+                    
+                    self.send_message(channel, f"📊 CURRENT RATING: {time_breakdown}")
+                    self.send_message(channel, f"🎖️ STATUS: {overall_rating}")
+                    self.send_message(channel, f"🏆 LONGEST RECORD: {longest_breakdown}")
+                    
+                    # Update toke count
+                    if nick not in self.toke_counts:
+                        self.toke_counts[nick] = 0
+                    self.toke_counts[nick] += 1
+                    
+                    # Show toke count only at 4:20
+                    self.send_message(channel, f"🔢 TOTAL TOKES: {self.toke_counts[nick]}")
+                else:
+                    # Regular churchbong - just update counts silently
+                    if nick not in self.toke_counts:
+                        self.toke_counts[nick] = 0
+                    self.toke_counts[nick] += 1
+                    
             else:
                 self.send_message(channel, f"{nick}: First churchbong recorded! May the sacred smoke guide you. 🔔💨")
+                self.longest_abstinence[nick] = 0
+                
+                # Initialize toke count
+                if nick not in self.toke_counts:
+                    self.toke_counts[nick] = 0
+                self.toke_counts[nick] += 1
+                
+                # Show toke count only at 4:20 for first time users too
+                if is_420_time:
+                    self.send_message(channel, f"🔢 TOTAL TOKES: {self.toke_counts[nick]}")
             
             # Update user's last toke time
             self.toke_data[nick] = current_time
@@ -444,6 +562,20 @@ class IRCBot:
         elif command in ["toke", "pass", "joint", "dab", "blunt", "bong", "vape", "doombong", "olddoombong", "kylebong"]:
             # Silent toke tracking - just record timestamp without response
             current_time = time.time()
+            
+            # Update longest abstinence record if applicable
+            if nick in self.toke_data:
+                time_diff_seconds = int(current_time - self.toke_data[nick])
+                if nick not in self.longest_abstinence or time_diff_seconds > self.longest_abstinence[nick]:
+                    self.longest_abstinence[nick] = time_diff_seconds
+            else:
+                self.longest_abstinence[nick] = 0
+            
+            # Update toke count
+            if nick not in self.toke_counts:
+                self.toke_counts[nick] = 0
+            self.toke_counts[nick] += 1
+            
             self.toke_data[nick] = current_time
             self.save_toke_data()
             # No message sent - silent tracking
@@ -451,6 +583,20 @@ class IRCBot:
         elif command == "blaze":
             # Special blaze command with message and tracking
             current_time = time.time()
+            
+            # Update longest abstinence record if applicable
+            if nick in self.toke_data:
+                time_diff_seconds = int(current_time - self.toke_data[nick])
+                if nick not in self.longest_abstinence or time_diff_seconds > self.longest_abstinence[nick]:
+                    self.longest_abstinence[nick] = time_diff_seconds
+            else:
+                self.longest_abstinence[nick] = 0
+            
+            # Update toke count
+            if nick not in self.toke_counts:
+                self.toke_counts[nick] = 0
+            self.toke_counts[nick] += 1
+            
             self.toke_data[nick] = current_time
             self.save_toke_data()
             self.send_message(channel, "Fire is going to get you higher, blaze it till you phaze it.")
