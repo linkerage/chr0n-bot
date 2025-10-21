@@ -277,26 +277,52 @@ class IRCBot:
             self.toke_data[nick] = current_time
             self.save_toke_data()
             
-            # If they typed "420", add a random 420 fact
+            # If they typed "420", add a random 420 fact or special quote during 4:20 times
             if args and args[0] == "420":
-                facts_420 = [
-                    "4:20 PM is Adolf Hitler's birthday - April 20th, 1889. Coincidence? Most say yes.",
-                    "420 is police code for marijuana smoking in progress (actually a myth - it's not real police code).",
-                    "4:20 PM was when a group of California high schoolers called 'The Waldos' would meet to smoke in 1971.",
-                    "April 20th (4/20) is considered the unofficial holiday for cannabis culture worldwide.",
-                    "The number 420 appears in Bob Dylan's song 'Rainy Day Women #12 & 35' (12 × 35 = 420).",
-                    "In Las Vegas, many hotel rooms numbered 420 have been stolen so often they're now numbered 419+1.",
-                    "The first 420 celebration was held at San Rafael High School in California in 1971.",
-                    "420 is the sum of 4:20 PM in minutes (16:20 = 16×60+20 = 980... wait, that's not right).",
-                    "Cannabis has 420 chemical compounds (actually it has over 480, but close enough).",
-                    "The Grateful Dead's official fan club address was 420 Natoma Street in San Francisco.",
-                    "Highway 420 in Canada was renamed because the signs kept getting stolen.",
-                    "420 BC was supposedly when the ancient Greeks first discovered hemp cultivation.",
-                    "The code H.R.420 was used for multiple cannabis legalization bills in the U.S. Congress."
-                ]
-                import random
-                fact = random.choice(facts_420)
-                self.send_message(channel, f"420 Fact: {fact}")
+                current_datetime = datetime.now()
+                current_hour = current_datetime.hour
+                current_minute = current_datetime.minute
+                
+                # Check if it's 4:20 AM (04:20) or 4:20 PM (16:20)
+                if (current_hour == 4 or current_hour == 16) and current_minute == 20:
+                    # Famous quotes adapted for weed during 4:20 times
+                    weed_quotes = [
+                        "\"To toke, or not to toke, that is the question\" - William Smokespeare 🌿",
+                        "\"I have a dream... that one day all buds will be judged not by the color of their strain, but by the content of their THC\" - Martin Luther Kief 🌿",
+                        "\"Ask not what your dealer can do for you, ask what you can do for your dealer\" - John F. Kannedy 🌿",
+                        "\"The only thing we have to fear is fear itself... and running out of weed\" - Franklin D. Roachevelt 🌿",
+                        "\"I came, I saw, I conquered... this entire bag of Cheetos\" - Julius Blazer 🌿",
+                        "\"Give me liberty, or give me death... but preferably give me more cannabis\" - Patrick Henry Hemp 🌿",
+                        "\"Mr. Gorbachev, tear down this wall... and pass that joint\" - Ronald Reefer 🌿",
+                        "\"That's one small toke for man, one giant bong rip for mankind\" - Neil Strongarm 🌿",
+                        "\"Float like a butterfly, sting like a bee, smoke like a chimney\" - Muhammad Highli 🌿",
+                        "\"The only thing necessary for the triumph of evil is for good men to run out of weed\" - Edmund Burked 🌿",
+                        "\"Darkness cannot drive out darkness; only light can do that. Hate cannot drive out hate; only weed can do that\" - Martin Luther Kief Jr. 🌿",
+                        "\"Two roads diverged in a wood, and I took the one that led to the dispensary\" - Robert Frostbite 🌿"
+                    ]
+                    import random
+                    quote = random.choice(weed_quotes)
+                    self.send_message(channel, f"🕐 4:20 WISDOM: {quote}")
+                else:
+                    # Regular 420 facts for non-4:20 times
+                    facts_420 = [
+                        "4:20 PM is Adolf Hitler's birthday - April 20th, 1889. Coincidence? Most say yes.",
+                        "420 is police code for marijuana smoking in progress (actually a myth - it's not real police code).",
+                        "4:20 PM was when a group of California high schoolers called 'The Waldos' would meet to smoke in 1971.",
+                        "April 20th (4/20) is considered the unofficial holiday for cannabis culture worldwide.",
+                        "The number 420 appears in Bob Dylan's song 'Rainy Day Women #12 & 35' (12 × 35 = 420).",
+                        "In Las Vegas, many hotel rooms numbered 420 have been stolen so often they're now numbered 419+1.",
+                        "The first 420 celebration was held at San Rafael High School in California in 1971.",
+                        "420 is the sum of 4:20 PM in minutes (16:20 = 16×60+20 = 980... wait, that's not right).",
+                        "Cannabis has 420 chemical compounds (actually it has over 480, but close enough).",
+                        "The Grateful Dead's official fan club address was 420 Natoma Street in San Francisco.",
+                        "Highway 420 in Canada was renamed because the signs kept getting stolen.",
+                        "420 BC was supposedly when the ancient Greeks first discovered hemp cultivation.",
+                        "The code H.R.420 was used for multiple cannabis legalization bills in the U.S. Congress."
+                    ]
+                    import random
+                    fact = random.choice(facts_420)
+                    self.send_message(channel, f"420 Fact: {fact}")
                 
         elif command in ["toke", "pass", "joint", "dab", "blunt", "bong", "vape", "doombong", "olddoombong", "kylebong"]:
             # Silent toke tracking - just record timestamp without response
