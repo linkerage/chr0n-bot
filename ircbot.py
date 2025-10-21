@@ -285,24 +285,67 @@ class IRCBot:
                 
                 # Check if it's 4:20 AM (04:20) or 4:20 PM (16:20)
                 if (current_hour == 4 or current_hour == 16) and current_minute == 20:
-                    # Famous quotes adapted for weed during 4:20 times
-                    weed_quotes = [
-                        "\"To toke, or not to toke, that is the question\" - William Smokespeare 🌿",
-                        "\"I have a dream... that one day all buds will be judged not by the color of their strain, but by the content of their THC\" - Martin Luther Kief 🌿",
-                        "\"Ask not what your dealer can do for you, ask what you can do for your dealer\" - John F. Kannedy 🌿",
-                        "\"The only thing we have to fear is fear itself... and running out of weed\" - Franklin D. Roachevelt 🌿",
-                        "\"I came, I saw, I conquered... this entire bag of Cheetos\" - Julius Blazer 🌿",
-                        "\"Give me liberty, or give me death... but preferably give me more cannabis\" - Patrick Henry Hemp 🌿",
-                        "\"Mr. Gorbachev, tear down this wall... and pass that joint\" - Ronald Reefer 🌿",
-                        "\"That's one small toke for man, one giant bong rip for mankind\" - Neil Strongarm 🌿",
-                        "\"Float like a butterfly, sting like a bee, smoke like a chimney\" - Muhammad Highli 🌿",
-                        "\"The only thing necessary for the triumph of evil is for good men to run out of weed\" - Edmund Burked 🌿",
-                        "\"Darkness cannot drive out darkness; only light can do that. Hate cannot drive out hate; only weed can do that\" - Martin Luther Kief Jr. 🌿",
-                        "\"Two roads diverged in a wood, and I took the one that led to the dispensary\" - Robert Frostbite 🌿"
+                    # Calculate days since last toke for quote selection
+                    days_abstinent = 0
+                    if nick in self.toke_data:
+                        last_toke = self.toke_data[nick]
+                        time_since_last = current_time - last_toke
+                        days_abstinent = int(time_since_last // 86400)
+                    
+                    # Famous quotes adapted for weed, ordered chronologically (oldest to newest)
+                    # The longer you abstain, the more ancient the wisdom becomes
+                    chronological_weed_quotes = [
+                        # Ancient Era (7+ days) - Julius Caesar ~50 BC
+                        "\"I came, I saw, I conquered... this entire bag of Cheetos\" - Julius Blazer (50 BC) 🏛️",
+                        # Renaissance (6-7 days) - Shakespeare ~1600
+                        "\"To toke, or not to toke, that is the question\" - William Smokespeare (1603) 🎭",
+                        # Enlightenment (5-6 days) - Edmund Burke ~1770
+                        "\"The only thing necessary for the triumph of evil is for good men to run out of weed\" - Edmund Burked (1770) 📜",
+                        # American Revolution (4-5 days) - Patrick Henry 1775
+                        "\"Give me liberty, or give me death... but preferably give me more cannabis\" - Patrick Henry Hemp (1775) 🗽",
+                        # Poetry Era (3-4 days) - Robert Frost ~1920
+                        "\"Two roads diverged in a wood, and I took the one that led to the dispensary\" - Robert Frostbite (1920) 📖",
+                        # Great Depression (2-3 days) - FDR 1933
+                        "\"The only thing we have to fear is fear itself... and running out of weed\" - Franklin D. Roachevelt (1933) 🎩",
+                        # Civil Rights Era (1-2 days) - JFK 1961
+                        "\"Ask not what your dealer can do for you, ask what you can do for your dealer\" - John F. Kannedy (1961) 🌟",
+                        # Civil Rights Era (1-2 days) - MLK 1963
+                        "\"I have a dream... that one day all buds will be judged not by the color of their strain, but by the content of their THC\" - Martin Luther Kief (1963) ✊",
+                        # Civil Rights Era alt (1-2 days) - MLK 1967
+                        "\"Darkness cannot drive out darkness; only light can do that. Hate cannot drive out hate; only weed can do that\" - Martin Luther Kief Jr. (1967) ☮️",
+                        # Space Age (1 day) - Neil Armstrong 1969
+                        "\"That's one small toke for man, one giant bong rip for mankind\" - Neil Strongarm (1969) 🚀",
+                        # Boxing Era (< 1 day) - Muhammad Ali ~1974
+                        "\"Float like a butterfly, sting like a bee, smoke like a chimney\" - Muhammad Highli (1974) 🥊",
+                        # Cold War (< 1 day) - Reagan 1987
+                        "\"Mr. Gorbachev, tear down this wall... and pass that joint\" - Ronald Reefer (1987) 🧱"
                     ]
-                    import random
-                    quote = random.choice(weed_quotes)
-                    self.send_message(channel, f"🕐 4:20 WISDOM: {quote}")
+                    
+                    # Select quote based on abstinence time (longer = older quotes)
+                    if days_abstinent >= 7:
+                        quote_index = 0  # Ancient (Julius Caesar)
+                    elif days_abstinent >= 6:
+                        quote_index = 1  # Renaissance (Shakespeare)
+                    elif days_abstinent >= 5:
+                        quote_index = 2  # Enlightenment (Burke)
+                    elif days_abstinent >= 4:
+                        quote_index = 3  # American Revolution (Henry)
+                    elif days_abstinent >= 3:
+                        quote_index = 4  # Poetry Era (Frost)
+                    elif days_abstinent >= 2:
+                        quote_index = 5  # Great Depression (FDR)
+                    elif days_abstinent >= 1:
+                        # Civil Rights Era - randomly choose from 3 quotes
+                        import random
+                        quote_index = random.choice([6, 7, 8])  # JFK, MLK1, MLK2
+                    else:
+                        # Recent era (< 1 day) - randomly choose from newest 3
+                        import random
+                        quote_index = random.choice([9, 10, 11])  # Armstrong, Ali, Reagan
+                    
+                    quote = chronological_weed_quotes[quote_index]
+                    abstinence_msg = f" [Abstinent: {days_abstinent}d]" if days_abstinent >= 1 else ""
+                    self.send_message(channel, f"🕐 4:20 ANCIENT WISDOM: {quote}{abstinence_msg}")
                 else:
                     # Regular 420 facts for non-4:20 times
                     facts_420 = [
