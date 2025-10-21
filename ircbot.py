@@ -74,6 +74,7 @@ class IRCBot:
                     self.toke_counts = data.get('toke_counts', {})
                     self.longest_abstinence = data.get('longest_abstinence', {})
                     self.user_timezones = data.get('user_timezones', {})
+                    self.precision_timing = data.get('precision_timing', {})
                 else:
                     # Old format, migrate
                     self.toke_data = data
@@ -81,12 +82,14 @@ class IRCBot:
                     self.toke_counts = {}
                     self.longest_abstinence = {}
                     self.user_timezones = {}
+                    self.precision_timing = {}
         except (FileNotFoundError, EOFError):
             self.toke_data = {}  # {user: last_toke_timestamp}
             self.tb_enabled = {}  # {user: True/False}
             self.toke_counts = {}  # {user: total_tokes}
             self.longest_abstinence = {}  # {user: longest_seconds}
             self.user_timezones = {}  # {user: timezone_string}
+            self.precision_timing = {}  # {user: {'last_420_time': timestamp, 'perfect_cycles': int, 'total_420s': int, 'best_precision': seconds_off}}
             
     def save_toke_data(self):
         """Save toke break data to file"""
@@ -97,7 +100,8 @@ class IRCBot:
                     'tb_enabled': self.tb_enabled,
                     'toke_counts': self.toke_counts,
                     'longest_abstinence': self.longest_abstinence,
-                    'user_timezones': self.user_timezones
+                    'user_timezones': self.user_timezones,
+                    'precision_timing': self.precision_timing
                 }
                 pickle.dump(data, f)
         except Exception as e:
@@ -399,6 +403,97 @@ class IRCBot:
                 pass
         return datetime.now()
         
+    def calculate_precision_score(self, nick, user_datetime, current_time):
+        """Calculate precision timing score for 4:20 attempts"""
+        if nick not in self.precision_timing:
+            self.precision_timing[nick] = {
+                'last_420_time': None,
+                'perfect_cycles': 0,
+                'total_420s': 0,
+                'best_precision': float('inf'),
+                'cycle_streak': 0
+            }
+        
+        timing_data = self.precision_timing[nick]
+        
+        # Calculate how many seconds off from perfect 4:20
+        current_minute = user_datetime.minute
+        current_second = user_datetime.second
+        
+        # Calculate seconds from 4:20:00
+        seconds_from_420 = abs((current_minute - 20) * 60 + current_second)
+        if seconds_from_420 > 30 * 60:  # If more than 30 minutes off, they're probably aiming for the other 4:20
+            seconds_from_420 = 60 * 60 - seconds_from_420
+        
+        # Update best precision if this is better
+        if seconds_from_420 < timing_data['best_precision']:
+            timing_data['best_precision'] = seconds_from_420
+        
+        # Check if this maintains a 12-hour cycle
+        is_perfect_cycle = False
+        if timing_data['last_420_time']:
+            time_since_last = current_time - timing_data['last_420_time']
+            hours_since_last = time_since_last / 3600
+            
+            # Check if it's close to a 12-hour multiple (within 1 hour tolerance)
+            cycle_multiples = [12, 24, 36, 48]  # 12, 24, 36, 48 hour cycles
+            for cycle_hours in cycle_multiples:
+                if abs(hours_since_last - cycle_hours) <= 1:  # 1 hour tolerance
+                    is_perfect_cycle = True
+                    timing_data['perfect_cycles'] += 1
+                    timing_data['cycle_streak'] += 1
+                    break
+            
+            if not is_perfect_cycle:
+                timing_data['cycle_streak'] = 0  # Reset streak if cycle is broken
+        else:
+            # First 4:20, start the cycle
+            timing_data['cycle_streak'] = 1
+        
+        timing_data['total_420s'] += 1
+        timing_data['last_420_time'] = current_time
+        
+        # Calculate precision rank
+        precision_rank = self.get_precision_rank(seconds_from_420, timing_data['perfect_cycles'], timing_data['cycle_streak'])
+        
+        return seconds_from_420, is_perfect_cycle, precision_rank, timing_data
+    
+    def get_precision_rank(self, seconds_off, perfect_cycles, cycle_streak):
+        """Get precision rank based on timing accuracy and cycle maintenance"""
+        # Base rank on precision (lower seconds = better rank)
+        if seconds_off == 0:
+            base_rank = "🏆 PERFECT CHRONOS"
+        elif seconds_off <= 5:
+            base_rank = "🥇 MASTER TIMER"
+        elif seconds_off <= 15:
+            base_rank = "🥈 EXPERT PRECISION"
+        elif seconds_off <= 30:
+            base_rank = "🥉 SKILLED TIMING"
+        elif seconds_off <= 60:
+            base_rank = "⭐ DECENT ACCURACY"
+        elif seconds_off <= 120:
+            base_rank = "💫 BASIC ATTEMPT"
+        else:
+            base_rank = "🔹 ROOKIE TIMING"
+        
+        # Enhance rank based on perfect cycles and streaks
+        if cycle_streak >= 7:
+            enhanced_rank = f"👑 LEGENDARY CYCLE MASTER - {base_rank}"
+        elif cycle_streak >= 5:
+            enhanced_rank = f"🔥 FIRE STREAK CHAMPION - {base_rank}"
+        elif cycle_streak >= 3:
+            enhanced_rank = f"⚡ LIGHTNING STREAK - {base_rank}"
+        elif perfect_cycles >= 10:
+            enhanced_rank = f"🌌 COSMIC SYNCHRONIZER - {base_rank}"
+        elif perfect_cycles >= 5:
+            enhanced_rank = f"🌀 CYCLONE MASTER - {base_rank}"
+        elif perfect_cycles >= 1:
+            enhanced_rank = f"🔄 CYCLE KEEPER - {base_rank}"
+        else:
+            enhanced_rank = base_rank
+        
+        return enhanced_rank
+        
     def connect(self):
         """Connect to the IRC server"""
         try:
@@ -617,6 +712,26 @@ class IRCBot:
                 
                 # Only show detailed rating system at 4:20 AM/PM
                 if is_420_time:
+                    # Calculate precision timing for this 4:20 attempt
+                    seconds_off, is_perfect_cycle, precision_rank, timing_data = self.calculate_precision_score(nick, user_datetime, current_time)
+                    
+                    # Show precision timing first (most important at 4:20)
+                    if seconds_off == 0:
+                        self.send_message(channel, f"🕐 PERFECT 4:20:00 HIT! {precision_rank} 🎆")
+                    else:
+                        self.send_message(channel, f"🕐 4:20 PRECISION: {seconds_off}s off perfect timing")
+                    
+                    self.send_message(channel, f"🎩 TIMING RANK: {precision_rank}")
+                    
+                    if is_perfect_cycle:
+                        self.send_message(channel, f"🔄 PERFECT 12H CYCLE MAINTAINED! Streak: {timing_data['cycle_streak']} ⚡")
+                    
+                    cycle_info = f"Cycles: {timing_data['perfect_cycles']} | Streak: {timing_data['cycle_streak']} | Total 4:20s: {timing_data['total_420s']}"
+                    best_precision = timing_data['best_precision']
+                    if best_precision == float('inf'):
+                        best_precision = seconds_off
+                    self.send_message(channel, f"📊 PRECISION STATS: {cycle_info} | Best: {best_precision}s off")
+                    
                     # Get rating breakdown
                     time_breakdown, overall_rating = self.get_abstinence_rating(time_diff_seconds)
                     # Get longest record breakdown
