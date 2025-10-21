@@ -11,6 +11,8 @@ import os
 import logging
 import pickle
 from datetime import datetime
+import pytz
+from zoneinfo import ZoneInfo
 
 class IRCBot:
     def __init__(self, config_file="config.json"):
@@ -71,17 +73,20 @@ class IRCBot:
                     self.tb_enabled = data.get('tb_enabled', {})
                     self.toke_counts = data.get('toke_counts', {})
                     self.longest_abstinence = data.get('longest_abstinence', {})
+                    self.user_timezones = data.get('user_timezones', {})
                 else:
                     # Old format, migrate
                     self.toke_data = data
                     self.tb_enabled = {}
                     self.toke_counts = {}
                     self.longest_abstinence = {}
+                    self.user_timezones = {}
         except (FileNotFoundError, EOFError):
             self.toke_data = {}  # {user: last_toke_timestamp}
             self.tb_enabled = {}  # {user: True/False}
             self.toke_counts = {}  # {user: total_tokes}
             self.longest_abstinence = {}  # {user: longest_seconds}
+            self.user_timezones = {}  # {user: timezone_string}
             
     def save_toke_data(self):
         """Save toke break data to file"""
@@ -91,7 +96,8 @@ class IRCBot:
                     'timestamps': self.toke_data,
                     'tb_enabled': self.tb_enabled,
                     'toke_counts': self.toke_counts,
-                    'longest_abstinence': self.longest_abstinence
+                    'longest_abstinence': self.longest_abstinence,
+                    'user_timezones': self.user_timezones
                 }
                 pickle.dump(data, f)
         except Exception as e:
@@ -160,6 +166,238 @@ class IRCBot:
         
         time_breakdown = " + ".join(time_ratings)
         return time_breakdown, overall_rating
+        
+    def get_timezone_from_location(self, location_parts):
+        """Try to determine timezone from location parts"""
+        location = " ".join(location_parts).lower()
+        
+        # Common timezone mappings
+        timezone_map = {
+            # US Cities
+            'new york': 'America/New_York', 'nyc': 'America/New_York',
+            'los angeles': 'America/Los_Angeles', 'la': 'America/Los_Angeles',
+            'chicago': 'America/Chicago', 'houston': 'America/Chicago',
+            'phoenix': 'America/Phoenix', 'philadelphia': 'America/New_York',
+            'san antonio': 'America/Chicago', 'san diego': 'America/Los_Angeles',
+            'dallas': 'America/Chicago', 'san jose': 'America/Los_Angeles',
+            'austin': 'America/Chicago', 'jacksonville': 'America/New_York',
+            'san francisco': 'America/Los_Angeles', 'columbus': 'America/New_York',
+            'charlotte': 'America/New_York', 'fort worth': 'America/Chicago',
+            'indianapolis': 'America/Indiana/Indianapolis', 'seattle': 'America/Los_Angeles',
+            'denver': 'America/Denver', 'washington': 'America/New_York',
+            'boston': 'America/New_York', 'el paso': 'America/Denver',
+            'detroit': 'America/Detroit', 'nashville': 'America/Chicago',
+            'portland': 'America/Los_Angeles', 'memphis': 'America/Chicago',
+            'oklahoma city': 'America/Chicago', 'las vegas': 'America/Los_Angeles',
+            'louisville': 'America/New_York', 'baltimore': 'America/New_York',
+            'milwaukee': 'America/Chicago', 'albuquerque': 'America/Denver',
+            'tucson': 'America/Phoenix', 'fresno': 'America/Los_Angeles',
+            'sacramento': 'America/Los_Angeles', 'mesa': 'America/Phoenix',
+            'kansas city': 'America/Chicago', 'atlanta': 'America/New_York',
+            'miami': 'America/New_York', 'colorado springs': 'America/Denver',
+            'raleigh': 'America/New_York', 'omaha': 'America/Chicago',
+            'long beach': 'America/Los_Angeles', 'virginia beach': 'America/New_York',
+            'oakland': 'America/Los_Angeles', 'minneapolis': 'America/Chicago',
+            'tulsa': 'America/Chicago', 'arlington': 'America/Chicago',
+            'tampa': 'America/New_York', 'new orleans': 'America/Chicago',
+            'wichita': 'America/Chicago', 'cleveland': 'America/New_York',
+            'bakersfield': 'America/Los_Angeles', 'aurora': 'America/Denver',
+            'anaheim': 'America/Los_Angeles', 'honolulu': 'Pacific/Honolulu',
+            'santa ana': 'America/Los_Angeles', 'corpus christi': 'America/Chicago',
+            'riverside': 'America/Los_Angeles', 'lexington': 'America/New_York',
+            'stockton': 'America/Los_Angeles', 'st. louis': 'America/Chicago',
+            'saint paul': 'America/Chicago', 'cincinnati': 'America/New_York',
+            'anchorage': 'America/Anchorage', 'henderson': 'America/Los_Angeles',
+            'greensboro': 'America/New_York', 'plano': 'America/Chicago',
+            'newark': 'America/New_York', 'lincoln': 'America/Chicago',
+            'buffalo': 'America/New_York', 'jersey city': 'America/New_York',
+            'chula vista': 'America/Los_Angeles', 'fort wayne': 'America/Indiana/Indianapolis',
+            'orlando': 'America/New_York', 'st. petersburg': 'America/New_York',
+            'chandler': 'America/Phoenix', 'laredo': 'America/Chicago',
+            'norfolk': 'America/New_York', 'durham': 'America/New_York',
+            'madison': 'America/Chicago', 'lubbock': 'America/Chicago',
+            'irvine': 'America/Los_Angeles', 'winston-salem': 'America/New_York',
+            'glendale': 'America/Los_Angeles', 'garland': 'America/Chicago',
+            'hialeah': 'America/New_York', 'reno': 'America/Los_Angeles',
+            'baton rouge': 'America/Chicago', 'irving': 'America/Chicago',
+            'scottsdale': 'America/Phoenix', 'fremont': 'America/Los_Angeles',
+            'boise': 'America/Boise', 'richmond': 'America/New_York',
+            'san bernardino': 'America/Los_Angeles', 'birmingham': 'America/Chicago',
+            'spokane': 'America/Los_Angeles', 'rochester': 'America/New_York',
+            'des moines': 'America/Chicago', 'modesto': 'America/Los_Angeles',
+            'fayetteville': 'America/New_York', 'tacoma': 'America/Los_Angeles',
+            'oxnard': 'America/Los_Angeles', 'fontana': 'America/Los_Angeles',
+            'columbus': 'America/New_York', 'montgomery': 'America/Chicago',
+            'moreno valley': 'America/Los_Angeles', 'shreveport': 'America/Chicago',
+            'aurora': 'America/Chicago', 'yonkers': 'America/New_York',
+            'akron': 'America/New_York', 'huntington beach': 'America/Los_Angeles',
+            'little rock': 'America/Chicago', 'augusta': 'America/New_York',
+            'amarillo': 'America/Chicago', 'glendale': 'America/Phoenix',
+            'mobile': 'America/Chicago', 'grand rapids': 'America/New_York',
+            'salt lake city': 'America/Denver', 'tallahassee': 'America/New_York',
+            'huntsville': 'America/Chicago', 'grand prairie': 'America/Chicago',
+            'knoxville': 'America/New_York', 'worcester': 'America/New_York',
+            'newport news': 'America/New_York', 'brownsville': 'America/Chicago',
+            'santa clarita': 'America/Los_Angeles', 'providence': 'America/New_York',
+            'fort lauderdale': 'America/New_York', 'chattanooga': 'America/New_York',
+            'tempe': 'America/Phoenix', 'oceanside': 'America/Los_Angeles',
+            'garden grove': 'America/Los_Angeles', 'rancho cucamonga': 'America/Los_Angeles',
+            'cape coral': 'America/New_York', 'santa rosa': 'America/Los_Angeles',
+            'vancouver': 'America/Los_Angeles', 'sioux falls': 'America/Chicago',
+            'ontario': 'America/Los_Angeles', 'mckinney': 'America/Chicago',
+            'elk grove': 'America/Los_Angeles', 'pembroke pines': 'America/New_York',
+            'salem': 'America/Los_Angeles', 'corona': 'America/Los_Angeles',
+            
+            # US States
+            'california': 'America/Los_Angeles', 'ca': 'America/Los_Angeles',
+            'new york': 'America/New_York', 'ny': 'America/New_York',
+            'texas': 'America/Chicago', 'tx': 'America/Chicago',
+            'florida': 'America/New_York', 'fl': 'America/New_York',
+            'pennsylvania': 'America/New_York', 'pa': 'America/New_York',
+            'illinois': 'America/Chicago', 'il': 'America/Chicago',
+            'ohio': 'America/New_York', 'oh': 'America/New_York',
+            'georgia': 'America/New_York', 'ga': 'America/New_York',
+            'north carolina': 'America/New_York', 'nc': 'America/New_York',
+            'michigan': 'America/Detroit', 'mi': 'America/Detroit',
+            'new jersey': 'America/New_York', 'nj': 'America/New_York',
+            'virginia': 'America/New_York', 'va': 'America/New_York',
+            'washington': 'America/Los_Angeles', 'wa': 'America/Los_Angeles',
+            'arizona': 'America/Phoenix', 'az': 'America/Phoenix',
+            'massachusetts': 'America/New_York', 'ma': 'America/New_York',
+            'tennessee': 'America/Chicago', 'tn': 'America/Chicago',
+            'indiana': 'America/Indiana/Indianapolis', 'in': 'America/Indiana/Indianapolis',
+            'missouri': 'America/Chicago', 'mo': 'America/Chicago',
+            'maryland': 'America/New_York', 'md': 'America/New_York',
+            'wisconsin': 'America/Chicago', 'wi': 'America/Chicago',
+            'colorado': 'America/Denver', 'co': 'America/Denver',
+            'minnesota': 'America/Chicago', 'mn': 'America/Chicago',
+            'south carolina': 'America/New_York', 'sc': 'America/New_York',
+            'alabama': 'America/Chicago', 'al': 'America/Chicago',
+            'louisiana': 'America/Chicago', 'la': 'America/Chicago',
+            'kentucky': 'America/New_York', 'ky': 'America/New_York',
+            'oregon': 'America/Los_Angeles', 'or': 'America/Los_Angeles',
+            'oklahoma': 'America/Chicago', 'ok': 'America/Chicago',
+            'connecticut': 'America/New_York', 'ct': 'America/New_York',
+            'utah': 'America/Denver', 'ut': 'America/Denver',
+            'iowa': 'America/Chicago', 'ia': 'America/Chicago',
+            'nevada': 'America/Los_Angeles', 'nv': 'America/Los_Angeles',
+            'arkansas': 'America/Chicago', 'ar': 'America/Chicago',
+            'mississippi': 'America/Chicago', 'ms': 'America/Chicago',
+            'kansas': 'America/Chicago', 'ks': 'America/Chicago',
+            'new mexico': 'America/Denver', 'nm': 'America/Denver',
+            'nebraska': 'America/Chicago', 'ne': 'America/Chicago',
+            'west virginia': 'America/New_York', 'wv': 'America/New_York',
+            'idaho': 'America/Boise', 'id': 'America/Boise',
+            'hawaii': 'Pacific/Honolulu', 'hi': 'Pacific/Honolulu',
+            'new hampshire': 'America/New_York', 'nh': 'America/New_York',
+            'maine': 'America/New_York', 'me': 'America/New_York',
+            'montana': 'America/Denver', 'mt': 'America/Denver',
+            'rhode island': 'America/New_York', 'ri': 'America/New_York',
+            'delaware': 'America/New_York', 'de': 'America/New_York',
+            'south dakota': 'America/Chicago', 'sd': 'America/Chicago',
+            'north dakota': 'America/Chicago', 'nd': 'America/Chicago',
+            'alaska': 'America/Anchorage', 'ak': 'America/Anchorage',
+            'vermont': 'America/New_York', 'vt': 'America/New_York',
+            'wyoming': 'America/Denver', 'wy': 'America/Denver',
+            
+            # Countries
+            'usa': 'America/New_York', 'united states': 'America/New_York',
+            'canada': 'America/Toronto', 'toronto': 'America/Toronto',
+            'vancouver': 'America/Vancouver', 'montreal': 'America/Montreal',
+            'calgary': 'America/Calgary', 'edmonton': 'America/Edmonton',
+            'ottawa': 'America/Toronto', 'winnipeg': 'America/Winnipeg',
+            'quebec': 'America/Montreal', 'hamilton': 'America/Toronto',
+            'kitchener': 'America/Toronto', 'london': 'America/Toronto',
+            'halifax': 'America/Halifax', 'victoria': 'America/Vancouver',
+            'saskatoon': 'America/Regina', 'regina': 'America/Regina',
+            
+            'uk': 'Europe/London', 'united kingdom': 'Europe/London',
+            'london': 'Europe/London', 'manchester': 'Europe/London',
+            'birmingham': 'Europe/London', 'glasgow': 'Europe/London',
+            'liverpool': 'Europe/London', 'leeds': 'Europe/London',
+            'sheffield': 'Europe/London', 'edinburgh': 'Europe/London',
+            'bristol': 'Europe/London', 'cardiff': 'Europe/London',
+            'belfast': 'Europe/London', 'newcastle': 'Europe/London',
+            
+            'germany': 'Europe/Berlin', 'berlin': 'Europe/Berlin',
+            'munich': 'Europe/Berlin', 'hamburg': 'Europe/Berlin',
+            'cologne': 'Europe/Berlin', 'frankfurt': 'Europe/Berlin',
+            'stuttgart': 'Europe/Berlin', 'düsseldorf': 'Europe/Berlin',
+            'dortmund': 'Europe/Berlin', 'essen': 'Europe/Berlin',
+            
+            'france': 'Europe/Paris', 'paris': 'Europe/Paris',
+            'marseille': 'Europe/Paris', 'lyon': 'Europe/Paris',
+            'toulouse': 'Europe/Paris', 'nice': 'Europe/Paris',
+            'nantes': 'Europe/Paris', 'montpellier': 'Europe/Paris',
+            'strasbourg': 'Europe/Paris', 'bordeaux': 'Europe/Paris',
+            
+            'australia': 'Australia/Sydney', 'sydney': 'Australia/Sydney',
+            'melbourne': 'Australia/Melbourne', 'brisbane': 'Australia/Brisbane',
+            'perth': 'Australia/Perth', 'adelaide': 'Australia/Adelaide',
+            'canberra': 'Australia/Sydney', 'darwin': 'Australia/Darwin',
+            'hobart': 'Australia/Hobart',
+            
+            'japan': 'Asia/Tokyo', 'tokyo': 'Asia/Tokyo',
+            'osaka': 'Asia/Tokyo', 'kyoto': 'Asia/Tokyo',
+            'nagoya': 'Asia/Tokyo', 'sapporo': 'Asia/Tokyo',
+            'fukuoka': 'Asia/Tokyo', 'kobe': 'Asia/Tokyo',
+            
+            'china': 'Asia/Shanghai', 'beijing': 'Asia/Shanghai',
+            'shanghai': 'Asia/Shanghai', 'guangzhou': 'Asia/Shanghai',
+            'shenzhen': 'Asia/Shanghai', 'tianjin': 'Asia/Shanghai',
+            'wuhan': 'Asia/Shanghai', 'xi\'an': 'Asia/Shanghai',
+            
+            'india': 'Asia/Kolkata', 'mumbai': 'Asia/Kolkata',
+            'delhi': 'Asia/Kolkata', 'bangalore': 'Asia/Kolkata',
+            'hyderabad': 'Asia/Kolkata', 'chennai': 'Asia/Kolkata',
+            'kolkata': 'Asia/Kolkata', 'pune': 'Asia/Kolkata',
+            
+            'brazil': 'America/Sao_Paulo', 'sao paulo': 'America/Sao_Paulo',
+            'rio de janeiro': 'America/Sao_Paulo', 'brasilia': 'America/Sao_Paulo',
+            'salvador': 'America/Sao_Paulo', 'fortaleza': 'America/Sao_Paulo',
+            
+            'mexico': 'America/Mexico_City', 'mexico city': 'America/Mexico_City',
+            'guadalajara': 'America/Mexico_City', 'monterrey': 'America/Mexico_City',
+            'puebla': 'America/Mexico_City', 'tijuana': 'America/Tijuana',
+            'juarez': 'America/Denver', 'leon': 'America/Mexico_City',
+            
+            'netherlands': 'Europe/Amsterdam', 'amsterdam': 'Europe/Amsterdam',
+            'rotterdam': 'Europe/Amsterdam', 'the hague': 'Europe/Amsterdam',
+            'utrecht': 'Europe/Amsterdam',
+            
+            'spain': 'Europe/Madrid', 'madrid': 'Europe/Madrid',
+            'barcelona': 'Europe/Madrid', 'valencia': 'Europe/Madrid',
+            'seville': 'Europe/Madrid', 'bilbao': 'Europe/Madrid',
+            
+            'italy': 'Europe/Rome', 'rome': 'Europe/Rome',
+            'milan': 'Europe/Rome', 'naples': 'Europe/Rome',
+            'turin': 'Europe/Rome', 'florence': 'Europe/Rome',
+            
+            'russia': 'Europe/Moscow', 'moscow': 'Europe/Moscow',
+            'saint petersburg': 'Europe/Moscow', 'novosibirsk': 'Asia/Novosibirsk',
+            'yekaterinburg': 'Asia/Yekaterinburg', 'nizhny novgorod': 'Europe/Moscow',
+        }
+        
+        # Check for exact matches first
+        if location in timezone_map:
+            return timezone_map[location]
+        
+        # Check for partial matches
+        for key, tz in timezone_map.items():
+            if key in location or location in key:
+                return tz
+        
+        return None
+        
+    def get_user_datetime(self, nick):
+        """Get datetime in user's timezone, or server timezone if not set"""
+        if nick in self.user_timezones:
+            try:
+                user_tz = ZoneInfo(self.user_timezones[nick])
+                return datetime.now(user_tz)
+            except:
+                pass
+        return datetime.now()
         
     def connect(self):
         """Connect to the IRC server"""
@@ -238,7 +476,7 @@ class IRCBot:
         
         # Bot commands
         if command == "help":
-            self.send_message(channel, f"{nick}: Available commands: !help, !ping, !about, !uptime, !gentoo, !time, !churchbong, !toke, !pass, !joint, !dab, !blunt, !bong, !vape, !doombong, !olddoombong, !kylebong, !blaze")
+            self.send_message(channel, f"{nick}: Available commands: !help, !ping, !about, !uptime, !gentoo, !time, !bud-zone, !churchbong, !toke, !pass, !joint, !dab, !blunt, !bong, !vape, !doombong, !olddoombong, !kylebong, !blaze")
             
         elif command == "ping":
             self.send_message(channel, f"{nick}: Pong!")
@@ -263,6 +501,29 @@ class IRCBot:
             ]
             import random
             self.send_message(channel, f"{nick}: {random.choice(responses)}")
+            
+        elif command == "bud-zone":
+            if not args:
+                # Show current timezone
+                if nick in self.user_timezones:
+                    current_tz = self.user_timezones[nick]
+                    user_dt = self.get_user_datetime(nick)
+                    self.send_message(channel, f"{nick}: Your bud-zone is set to {current_tz} (currently {user_dt.strftime('%I:%M %p %Z')} 🌍🌿)")
+                else:
+                    self.send_message(channel, f"{nick}: You haven't set a bud-zone yet! Use: !bud-zone <city state country> 🌍🌿")
+            else:
+                # Set timezone based on location
+                location_str = " ".join(args)
+                timezone = self.get_timezone_from_location(args)
+                
+                if timezone:
+                    self.user_timezones[nick] = timezone
+                    self.save_toke_data()
+                    user_dt = self.get_user_datetime(nick)
+                    self.send_message(channel, f"{nick}: Bud-zone set to {location_str} ({timezone}) - currently {user_dt.strftime('%I:%M %p %Z')} 🌍🌿")
+                    self.send_message(channel, f"Your 4:20 times will now be based on {location_str} timezone! 🕐🌿")
+                else:
+                    self.send_message(channel, f"{nick}: Sorry, couldn't find timezone for '{location_str}'. Try: city, state, country (e.g., 'Los Angeles CA', 'London UK', 'Tokyo Japan') 🌍🌿")
             
         elif command == "time":
             # Countdown to December 4th, 2025
@@ -321,11 +582,11 @@ class IRCBot:
         elif command == "churchbong":
             # Works with or without "420" argument
             current_time = time.time()
-            current_datetime = datetime.now()
-            current_hour = current_datetime.hour
-            current_minute = current_datetime.minute
+            user_datetime = self.get_user_datetime(nick)
+            current_hour = user_datetime.hour
+            current_minute = user_datetime.minute
             
-            # Check if it's 4:20 AM (04:20) or 4:20 PM (16:20) for detailed analysis
+            # Check if it's 4:20 AM (04:20) or 4:20 PM (16:20) in user's timezone for detailed analysis
             is_420_time = (current_hour == 4 or current_hour == 16) and current_minute == 20
             
             if nick in self.toke_data:
@@ -397,11 +658,11 @@ class IRCBot:
             
             # If they typed "420", add a random 420 fact or special quote during 4:20 times
             if args and args[0] == "420":
-                current_datetime = datetime.now()
-                current_hour = current_datetime.hour
-                current_minute = current_datetime.minute
+                user_datetime_420 = self.get_user_datetime(nick)
+                current_hour = user_datetime_420.hour
+                current_minute = user_datetime_420.minute
                 
-                # Check if it's 4:20 AM (04:20) or 4:20 PM (16:20)
+                # Check if it's 4:20 AM (04:20) or 4:20 PM (16:20) in user's timezone
                 if (current_hour == 4 or current_hour == 16) and current_minute == 20:
                     # Calculate days since last toke for quote selection
                     days_abstinent = 0
