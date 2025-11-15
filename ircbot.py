@@ -1108,23 +1108,22 @@ class IRCBot:
             self.send_message(channel, quote)
             
         elif command == "pi":
-            # Pi digit collection at 3:14:15 AM/PM
+            # Pi digit collection at 3:14 AM/PM
             user_datetime = self.get_user_datetime(nick)
             current_hour = user_datetime.hour
             current_minute = user_datetime.minute
-            current_second = user_datetime.second
             
-            # Check if it's 3:14:15 AM (03:14:15) or 3:14:15 PM (15:14:15) in user's timezone
-            is_pi_time = (current_hour == 3 or current_hour == 15) and current_minute == 14 and current_second == 15
+            # Check if it's 3:14 AM (03:14) or 3:14 PM (15:14) in user's timezone
+            is_pi_time = (current_hour == 3 or current_hour == 15) and current_minute == 14
             
             if not is_pi_time:
                 # Show current progress even when not at pi time
                 if nick in self.pi_progress:
                     digits = self.pi_progress[nick]
                     rounds = self.pi_rounds_won.get(nick, 0)
-                    self.send_message(channel, f"{nick}: You have collected {digits} pi digits (base 64). Rounds won: {rounds}. Come back at 3:14:15 AM/PM! 🥧")
+                    self.send_message(channel, f"{nick}: You have collected {digits} pi digits (base 64). Rounds won: {rounds}. Come back at 3:14 AM/PM! 🥧")
                 else:
-                    self.send_message(channel, f"{nick}: You haven't collected any pi digits yet! Use !pi at 3:14:15 AM/PM to start! 🥧")
+                    self.send_message(channel, f"{nick}: You haven't collected any pi digits yet! Use !pi at 3:14 AM/PM to start! 🥧")
                 return
             
             # Initialize user's pi progress if needed
@@ -1196,7 +1195,7 @@ class IRCBot:
         elif command == "pi-show":
             # Show all collected base 64 pi digits
             if nick not in self.pi_progress or self.pi_progress[nick] == 0:
-                self.send_message(channel, f"{nick}: You haven't collected any pi digits yet! Use !pi at 3:14:15 AM/PM to start! 🥧")
+                self.send_message(channel, f"{nick}: You haven't collected any pi digits yet! Use !pi at 3:14 AM/PM to start! 🥧")
                 return
             
             # Get user's total collected digits
@@ -1275,7 +1274,7 @@ class IRCBot:
         
         elif command == "?":
             # Comprehensive help command covering all bot commands - all on one line
-            self.send_message(channel, "🌿 CHR0N-BOT 🌿 !bud-zone [location]=timezone | !strain <name>=info | !stoned=poetry | !time=countdown | !z6=seconds | !blaze=toke+quote | !edible=wisdom | !pi=collect@3:14:15 | !pi-show=digits | !t-break=stats | !craps [bet|roll|status|cashout]=dice🎲 | !midi=compose🎵")
+            self.send_message(channel, "🌿 CHR0N-BOT 🌿 !bud-zone [location]=timezone | !strain <name>=info | !stoned=poetry | !time=countdown | !z6=seconds | !blaze=toke+quote | !edible=wisdom | !pi=collect@3:14 | !pi-show=digits | !t-break=stats | !craps [bet|roll|status|cashout]=dice🎲 | !midi=compose🎵")
         
         elif command == "midi":
             # MIDI composition commands
