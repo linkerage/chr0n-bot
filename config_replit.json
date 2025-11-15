@@ -1,0 +1,17 @@
+{
+  "server": "irc.libera.chat",
+  "port": 6667,
+  "nickname": "Chronibit",
+  "username": "Chronibit",
+  "realname": "Chronibit",
+  "channels": [
+    "#gentoo-weed",
+    "#chr0n-dev",
+    "#weed",
+    "##videogames"
+  ],
+  "command_prefix": "!",
+  "nickserv_password": "",
+  "nickserv_email": "gthugg@gmail.com",
+  "nickserv_register": false
+}
