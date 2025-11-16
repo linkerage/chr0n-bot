@@ -12,7 +12,11 @@ import logging
 import pickle
 from datetime import datetime
 import pytz
-from zoneinfo import ZoneInfo
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    # For Python < 3.9, use pytz as fallback
+    ZoneInfo = None
 import base64
 from collections import defaultdict
 from midi_player import MidiManager
@@ -466,7 +470,11 @@ class IRCBot:
         """Get datetime in user's timezone, or server timezone if not set"""
         if nick in self.user_timezones:
             try:
-                user_tz = ZoneInfo(self.user_timezones[nick])
+                if ZoneInfo:
+                    user_tz = ZoneInfo(self.user_timezones[nick])
+                else:
+                    # Fallback to pytz for Python < 3.9
+                    user_tz = pytz.timezone(self.user_timezones[nick])
                 return datetime.now(user_tz)
             except:
                 pass
@@ -929,9 +937,15 @@ class IRCBot:
             
         elif command == "z6":
             # Countdown to December 4th, 2025 in Eastern time (seconds only)
-            eastern_tz = ZoneInfo('America/New_York')
-            target_date = datetime(2025, 12, 4, 0, 0, 0, tzinfo=eastern_tz)
-            current_date = datetime.now(eastern_tz)
+            if ZoneInfo:
+                eastern_tz = ZoneInfo('America/New_York')
+                target_date = datetime(2025, 12, 4, 0, 0, 0, tzinfo=eastern_tz)
+                current_date = datetime.now(eastern_tz)
+            else:
+                # Fallback to pytz
+                eastern_tz = pytz.timezone('America/New_York')
+                target_date = eastern_tz.localize(datetime(2025, 12, 4, 0, 0, 0))
+                current_date = datetime.now(eastern_tz)
             
             if current_date >= target_date:
                 self.send_message(channel, f"{nick}: December 4th, 2025 (ET) has already passed! 🎉")
@@ -1572,7 +1586,10 @@ class IRCBot:
                     # Check each user with a timezone
                     for user_nick, timezone_str in list(self.user_timezones.items()):
                         try:
-                            user_tz = ZoneInfo(timezone_str)
+                            if ZoneInfo:
+                                user_tz = ZoneInfo(timezone_str)
+                            else:
+                                user_tz = pytz.timezone(timezone_str)
                             user_datetime = datetime.now(user_tz)
                             user_hour = user_datetime.hour
                             user_minute = user_datetime.minute
