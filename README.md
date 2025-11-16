@@ -1,37 +1,64 @@
-# Chronibit
+# Chronibit (chr0n-bot)
 
-A Python IRC bot for #gentoo-weed on irc.libera.chat with cannabis-themed commands and toke tracking.
+A feature-rich Python IRC bot with cannabis-themed commands, timezone support, games, music composition, and toke tracking.
 
-## Features
+## 🌿 Key Features
 
-- **Toke Tracking**: Track time since last toke with `!churchbong` command
-- **420 Facts**: Get random cannabis facts with `!churchbong 420`
-- **Silent Tracking**: Commands like `!toke`, `!pass`, `!joint`, `!dab`, `!blunt` silently track usage
-- **MIDI Music Editor**: Create and edit music collaboratively via IRC with `!midi` commands
-- **Gentoo Love**: Random Gentoo-themed responses with `!gentoo`
-- **Standard Bot Commands**: `!help`, `!ping`, `!about`, `!uptime`
+- **🌍 Timezone Support**: Set your location with `!bud-zone` for personalized time-based features
+- **🥧 Pi Collection Game**: Collect base64 pi digits at 3:14 AM/PM daily
+- **🎲 Craps Game**: Play dice with betting, hot streaks, and comebacks
+- **🎵 MIDI Music Editor**: Collaborative music creation via IRC commands
+- **🌿 Cannabis Strain Database**: 150+ strains with effects and flavors
+- **📊 Toke Analytics**: Track usage, abstinence records, and T-breaks
+- **🔥 Philosophical Quotes**: Deep thoughts on combustion and consciousness
+- **⏰ Smart Time Features**: Countdown timers and timezone-aware commands
 
 ## Commands
 
-- `!help` - Show available commands
-- `!ping` - Pong response
-- `!about` - Bot information
-- `!uptime` - Show bot uptime
-- `!gentoo` - Random Gentoo-themed message
-- `!time` - Countdown to December 4th, 2025
-- `!churchbong` - Show time since last toked
-- `!churchbong 420` - Same as above plus a random 420 fact
-- `!toke`, `!pass`, `!joint`, `!dab`, `!blunt`, `!bong`, `!vape`, `!doombong`, `!olddoombong`, `!kylebong` - Silent toke tracking
-- `!blaze` - Track toke with motivational message
-- `!midi` - MIDI music editor (see MIDI_GUIDE.md for full details)
-  - `!midi info` - View your composition
-  - `!midi add <track> <note> <velocity> <start> <duration>` - Add a note
-  - `!midi play` - Play your composition
-  - `!midi stop` - Stop playback
-  - `!midi tempo <bpm>` - Set tempo
-  - `!midi track <name>` - Add a track
-  - `!midi save` - Save composition
-  - `!midi clear` - Start fresh
+### 🌍 Timezone & Location
+- `!bud-zone` - Show your current timezone
+- `!bud-zone <location>` - Set timezone (e.g., "Los Angeles CA", "London UK")
+
+### 🥧 Pi Collection Game
+- `!pi` - Collect 60 base64 pi digits (only at 3:14 AM/PM in your timezone)
+- `!pi-show` - Display all your collected pi digits
+- Goal: Collect 420 digits to win a round!
+
+### 🎲 Craps Dice Game
+- `!craps bet <amount>` - Place a bet and start a new game
+- `!craps roll` - Roll the dice
+- `!craps status` - Check your bankroll and stats
+- `!craps cashout` - Cash out and see final statistics
+
+### 🌿 Cannabis Features
+- `!strain <name>` - Get info on 150+ cannabis strains
+- `!stoned` - Poetic reflections on elevated consciousness
+- `!blaze` - Track toke with philosophical wisdom
+- `!edible` - Wisdom about edibles
+- `!toke`, `!joint`, `!dab`, `!blunt`, `!bong`, `!vape`, `!pass` - Track toke silently
+
+### 📊 Toke Analytics
+- `!z6` - Time since last toke with rank system
+- `!t-break` - Show your longest tolerance break
+
+### ⏰ Time Features
+- `!time` - Countdown to special date
+
+### 🎵 MIDI Music Editor
+- `!midi` - Show MIDI commands
+- `!midi info` - View your composition
+- `!midi add <track> <note> <velocity> <start> <duration>` - Add a note
+- `!midi play` - Play your composition
+- `!midi stop` - Stop playback
+- `!midi tempo <bpm>` - Set tempo (20-300 BPM)
+- `!midi track <name>` - Add a new track
+- `!midi instrument <track> <num>` - Set track instrument
+- `!midi save` - Save composition
+- `!midi clear` - Start fresh
+- See **MIDI_GUIDE.md** for complete documentation
+
+### ℹ️ Help
+- `!?` - Show all commands in one line
 
 ## Setup
 
