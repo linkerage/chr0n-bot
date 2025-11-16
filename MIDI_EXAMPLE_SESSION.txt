@@ -1,0 +1,109 @@
+Example IRC MIDI Editor Session
+================================
+
+This shows a typical session using the MIDI editor on IRC.
+
+# Creating a Simple Melody
+--------------------------
+<user1> !midi
+<Chronibit> user1: MIDI commands: !midi info | !midi play | !midi stop | !midi add <track> <note> <velocity> <start> <duration> | !midi tempo <bpm> | !midi track <name> | !midi instrument <track> <num> | !midi save | !midi clear 🎵
+
+<user1> !midi clear
+<Chronibit> user1: ✅ Composition cleared! Start fresh with !midi add
+
+<user1> !midi tempo 140
+<Chronibit> user1: ✅ Tempo set to 140 BPM
+
+<user1> !midi add 0 60 100 0 1
+<Chronibit> user1: ✅ Added C4 (MIDI 60) to track 0 at beat 0 for 1 beats
+
+<user1> !midi add 0 62 100 1 1
+<Chronibit> user1: ✅ Added D4 (MIDI 62) to track 0 at beat 1 for 1 beats
+
+<user1> !midi add 0 64 100 2 1
+<Chronibit> user1: ✅ Added E4 (MIDI 64) to track 0 at beat 2 for 1 beats
+
+<user1> !midi add 0 65 100 3 1
+<Chronibit> user1: ✅ Added F4 (MIDI 65) to track 0 at beat 3 for 1 beats
+
+<user1> !midi info
+<Chronibit> user1: 🎵 user1's composition | Tempo: 140 BPM | Time Signature: 4/4 | Duration: 4.0 beats | Tracks: 1 |   Track 0: Track 1 (4 notes, instrument 0)
+
+<user1> !midi play
+<Chronibit> user1: 🎵 Playing 'user1's composition' (~1.7s) - Notes will be logged! Use !midi stop to stop.
+
+
+# Adding a Bass Track
+---------------------
+<user1> !midi track Bass Line
+<Chronibit> user1: ✅ Added track 1: 'Bass Line'
+
+<user1> !midi instrument 1 33
+<Chronibit> user1: ✅ Track 1 instrument set to 33
+
+<user1> !midi add 1 36 80 0 4
+<Chronibit> user1: ✅ Added C1 (MIDI 36) to track 1 at beat 0 for 4 beats
+
+<user1> !midi info
+<Chronibit> user1: 🎵 user1's composition | Tempo: 140 BPM | Time Signature: 4/4 | Duration: 4.0 beats | Tracks: 2 |   Track 0: Track 1 (4 notes, instrument 0) |   Track 1: Bass Line (1 notes, instrument 33)
+
+
+# Multiple Users Can Work Simultaneously
+-----------------------------------------
+<user2> !midi add 0 67 100 0 0.5
+<Chronibit> user2: ✅ Added G4 (MIDI 67) to track 0 at beat 0 for 0.5 beats
+
+<user2> !midi add 0 69 100 0.5 0.5
+<Chronibit> user2: ✅ Added A4 (MIDI 69) to track 0 at beat 0.5 for 0.5 beats
+
+<user2> !midi add 0 71 100 1 1
+<Chronibit> user2: ✅ Added B4 (MIDI 71) to track 0 at beat 1 for 1 beats
+
+<user2> !midi play
+<Chronibit> user2: 🎵 Playing 'user2's composition' (~1.0s) - Notes will be logged! Use !midi stop to stop.
+
+
+# Building a Chord Progression
+-------------------------------
+<user3> !midi tempo 90
+<Chronibit> user3: ✅ Tempo set to 90 BPM
+
+# C Major chord (C-E-G)
+<user3> !midi add 0 60 90 0 2
+<Chronibit> user3: ✅ Added C4 (MIDI 60) to track 0 at beat 0 for 2 beats
+
+<user3> !midi add 0 64 90 0 2
+<Chronibit> user3: ✅ Added E4 (MIDI 64) to track 0 at beat 0 for 2 beats
+
+<user3> !midi add 0 67 90 0 2
+<Chronibit> user3: ✅ Added G4 (MIDI 67) to track 0 at beat 0 for 2 beats
+
+# F Major chord (F-A-C)
+<user3> !midi add 0 65 90 2 2
+<Chronibit> user3: ✅ Added F4 (MIDI 65) to track 0 at beat 2 for 2 beats
+
+<user3> !midi add 0 69 90 2 2
+<Chronibit> user3: ✅ Added A4 (MIDI 69) to track 0 at beat 2 for 2 beats
+
+<user3> !midi add 0 72 90 2 2
+<Chronibit> user3: ✅ Added C5 (MIDI 72) to track 0 at beat 2 for 2 beats
+
+<user3> !midi info
+<Chronibit> user3: 🎵 user3's composition | Tempo: 90 BPM | Time Signature: 4/4 | Duration: 4.0 beats | Tracks: 1 |   Track 0: Track 1 (6 notes, instrument 0)
+
+<user3> !midi play
+<Chronibit> user3: 🎵 Playing 'user3's composition' (~2.7s) - Notes will be logged! Use !midi stop to stop.
+
+<user3> !midi save
+<Chronibit> user3: ✅ Composition saved!
+
+
+Notes:
+------
+- Each user has their own independent composition
+- Compositions persist across bot restarts
+- Notes are logged when played (check ircbot.log)
+- Use MIDI note numbers (60 = middle C)
+- Beats are relative to the tempo (140 BPM = 140 beats per minute)
+- Multiple notes at the same start time create chords
+- Track 0 is created by default, add more tracks as needed
