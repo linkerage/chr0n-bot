@@ -634,9 +634,13 @@ class IRCBot:
     def send_raw(self, message):
         """Send raw IRC message"""
         if self.socket:
-            full_message = message + "\r\n"
-            self.socket.send(full_message.encode('utf-8'))
-            self.logger.debug(f"SENT: {message}")
+            try:
+                full_message = message + "\r\n"
+                self.socket.send(full_message.encode('utf-8'))
+                self.logger.debug(f"SENT: {message}")
+            except (OSError, BrokenPipeError) as e:
+                self.logger.error(f"Failed to send message: {e}")
+                self.connected = False
             
     def send_message(self, channel, message):
         """Send message to a channel"""
@@ -1697,11 +1701,20 @@ class IRCBot:
         
     def disconnect(self):
         """Disconnect from IRC server"""
+        if self.socket and self.connected:
+            try:
+                self.send_raw("QUIT :Bot shutting down")
+            except:
+                pass  # Ignore errors when quitting
+        
         if self.socket:
-            self.send_raw("QUIT :Bot shutting down")
-            self.socket.close()
-            self.connected = False
-            self.logger.info("Disconnected from server")
+            try:
+                self.socket.close()
+            except:
+                pass  # Ignore errors when closing
+        
+        self.connected = False
+        self.logger.info("Disconnected from server")
             
     def run(self):
         """Main bot run method"""
